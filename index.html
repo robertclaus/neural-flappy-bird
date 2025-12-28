@@ -1,0 +1,3196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Flappy Bird</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 800px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        #header h1 {
+            font-size: 24px;
+            color: #4ecca3;
+        }
+
+        .score-display {
+            display: flex;
+            gap: 30px;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .score-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        #restart-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        #restart-btn:hover {
+            background: #e74c3c;
+            color: #1a1a2e;
+        }
+
+        #main-area {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Upgrade Phase Styles */
+        #upgrade-phase {
+            display: flex;
+            gap: 20px;
+        }
+
+        #shop-panel {
+            width: 250px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .shop-section {
+            margin-bottom: 20px;
+        }
+
+        .shop-section h3 {
+            color: #4ecca3;
+            font-size: 14px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #4ecca3;
+        }
+
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .shop-item:hover:not(.purchased):not(.locked) {
+            background: rgba(78, 204, 163, 0.2);
+        }
+
+        .shop-item.purchased {
+            background: rgba(78, 204, 163, 0.3);
+            cursor: default;
+        }
+
+        .shop-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .item-name {
+            font-size: 13px;
+        }
+
+        .item-cost {
+            font-size: 12px;
+            color: #ffd700;
+        }
+
+        .item-owned {
+            font-size: 12px;
+            color: #4ecca3;
+        }
+
+        #network-panel {
+            width: 530px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .panel-header h3 {
+            color: #4ecca3;
+        }
+
+        .toggle-btn {
+            padding: 5px 10px;
+            background: #4ecca3;
+            border: none;
+            border-radius: 5px;
+            color: #1a1a2e;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        #network-canvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        #stats-view {
+            display: none;
+            padding: 20px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #play-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .play-btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .play-btn.manual {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .play-btn.ai {
+            background: linear-gradient(135deg, #4ecca3 0%, #45b7aa 100%);
+            color: #1a1a2e;
+        }
+
+        .play-btn.ai.locked {
+            background: linear-gradient(135deg, #555 0%, #444 100%);
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        /* Play Phase Styles */
+        #play-phase {
+            display: none;
+            position: relative;
+        }
+
+        #game-canvas {
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(78, 204, 163, 0.3);
+        }
+
+        #game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+        }
+
+        #game-overlay.hidden {
+            display: none;
+        }
+
+        #game-overlay h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #4ecca3;
+        }
+
+        #game-overlay p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .overlay-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #4ecca3;
+            border: none;
+            border-radius: 10px;
+            color: #1a1a2e;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        #nn-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 240px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        #nn-overlay.hidden {
+            display: none;
+        }
+
+        #mini-network-canvas {
+            width: 220px;
+            height: 150px;
+        }
+
+        .nn-toggle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #4ecca3;
+            border-radius: 5px;
+            color: #4ecca3;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .abort-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #f44336;
+            border-radius: 5px;
+            color: #f44336;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .abort-btn:hover {
+            background: rgba(244, 67, 54, 0.3);
+        }
+
+        /* Weight Editor Modal */
+        #weight-editor {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #4ecca3;
+            z-index: 1000;
+        }
+
+        #weight-editor h4 {
+            margin-bottom: 10px;
+            color: #4ecca3;
+        }
+
+        #weight-connection-info {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 15px;
+            text-align: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        #weight-connection-info .connection-from,
+        #weight-connection-info .connection-to {
+            color: #ffd700;
+        }
+
+        #weight-connection-info .connection-arrow {
+            color: #4ecca3;
+            margin: 0 8px;
+        }
+
+        #weight-slider {
+            width: 200px;
+        }
+
+        #weight-value {
+            display: block;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 24px;
+        }
+
+        .quick-weight-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .quick-btn {
+            width: 40px;
+            height: 32px;
+            border: 1px solid #4ecca3;
+            background: transparent;
+            color: #4ecca3;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: #4ecca3;
+            color: #1a1a2e;
+        }
+
+        .editor-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .editor-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .editor-btn.save {
+            background: #4ecca3;
+            color: #1a1a2e;
+        }
+
+        .editor-btn.cancel {
+            background: #666;
+            color: white;
+        }
+
+        /* Network tooltip */
+        #network-tooltip {
+            display: none;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #4ecca3;
+            border-radius: 8px;
+            padding: 12px;
+            max-width: 280px;
+            font-size: 13px;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        #network-tooltip .tooltip-title {
+            color: #4ecca3;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        #network-tooltip .tooltip-desc {
+            color: #ccc;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        #network-tooltip .tooltip-range {
+            color: #888;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        #network-tooltip .tooltip-tip {
+            color: #ffd700;
+            font-size: 12px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #333;
+        }
+
+        #activation-chart {
+            background: #1a1a1a;
+            border: 1px solid #444;
+        }
+
+        /* Activation function selector */
+        .activation-selector {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        .activation-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .activation-selector select {
+            width: 100%;
+            padding: 5px;
+            background: #2a2a4e;
+            border: 1px solid #4ecca3;
+            border-radius: 3px;
+            color: white;
+        }
+
+        /* Test inputs section */
+        #test-inputs {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        #test-inputs .section-title {
+            font-size: 12px;
+            color: #4ecca3;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #test-inputs .section-title button {
+            font-size: 10px;
+            padding: 2px 8px;
+            background: #4ecca3;
+            border: none;
+            border-radius: 3px;
+            color: #1a1a2e;
+            cursor: pointer;
+        }
+
+        .test-input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .test-input-row label {
+            width: 80px;
+            color: #888;
+            flex-shrink: 0;
+        }
+
+        .test-input-row input[type="range"] {
+            flex: 1;
+            margin: 0 8px;
+            height: 4px;
+        }
+
+        .test-input-row .test-value {
+            width: 45px;
+            text-align: right;
+            color: #ffd700;
+            font-family: monospace;
+        }
+
+        #test-output {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #333;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #test-output .output-label {
+            color: #888;
+        }
+
+        #test-output .output-value {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        #test-output .output-value.flap {
+            color: #4ecca3;
+        }
+
+        #test-output .output-value.no-flap {
+            color: #ff6b6b;
+        }
+
+        /* Speed control */
+        #speed-control {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        #speed-control label {
+            color: #888;
+        }
+
+        #speed-control select {
+            background: #2a2a4e;
+            border: 1px solid #4ecca3;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .ff-btn {
+            background: #4a4a6e;
+            border: 1px solid #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 5px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .ff-btn:hover {
+            background: #667eea;
+        }
+
+        .ff-btn.active {
+            background: #667eea;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        .ff-btn.locked {
+            display: none;
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.6; }
+        }
+
+        #ff-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(102, 126, 234, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        #ff-overlay.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="header">
+            <h1>NEURAL FLAPPY BIRD</h1>
+            <div class="score-display">
+                <div class="score-item">
+                    <div class="score-label">CURRENCY</div>
+                    <div class="score-value" id="currency-display">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">HIGH SCORE</div>
+                    <div class="score-value" id="highscore-display">0</div>
+                </div>
+            </div>
+            <button id="restart-btn" onclick="confirmRestart()">Restart Game</button>
+        </div>
+
+        <div id="main-area">
+            <!-- Upgrade Phase -->
+            <div id="upgrade-phase">
+                <div id="shop-panel">
+                    <div class="shop-section">
+                        <h3>OUTPUTS</h3>
+                        <div id="training-shop"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>NETWORK INPUTS</h3>
+                        <div id="input-shop"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>NETWORK SIZE</h3>
+                        <div id="size-shop"></div>
+                    </div>
+                    <div class="shop-section">
+                        <h3>ACTIVATION FUNCTIONS</h3>
+                        <div id="function-shop"></div>
+                    </div>
+                </div>
+
+                <div id="network-panel">
+                    <div class="panel-header">
+                        <h3>NETWORK CONFIGURATION</h3>
+                    </div>
+                    <canvas id="network-canvas" width="500" height="350"></canvas>
+                    <div class="activation-selector" id="activation-selector-section">
+                        <label>Hidden Layer Activation:</label>
+                        <select id="activation-select">
+                            <option value="step">Step (default)</option>
+                        </select>
+                    </div>
+                    <div id="test-inputs">
+                        <div class="section-title">
+                            <span>Test Inputs:</span>
+                            <button onclick="resetTestInputs()">Reset</button>
+                        </div>
+                        <div id="test-input-sliders"></div>
+                        <div id="test-output">
+                            <span class="output-label">Output:</span>
+                            <span class="output-value" id="test-output-value">0.00</span>
+                        </div>
+                    </div>
+                    <div id="play-buttons">
+                        <button class="play-btn manual" onclick="startGame(false)">PLAY MANUAL</button>
+                        <button class="play-btn ai" id="ai-play-btn" onclick="startGame(true)" title="Purchase 'AI Play Mode' in the Outputs shop to unlock">PLAY WITH AI 🔒</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Play Phase -->
+            <div id="play-phase">
+                <canvas id="game-canvas" width="800" height="500"></canvas>
+                <button class="nn-toggle" id="nn-toggle-btn">Show NN</button>
+                <button class="abort-btn" id="abort-btn" onclick="abortGame()">✕ Abort</button>
+                <div id="nn-overlay" class="hidden">
+                    <canvas id="mini-network-canvas" width="220" height="150"></canvas>
+                </div>
+                <div id="speed-control">
+                    <label>Speed: </label>
+                    <select id="game-speed">
+                        <option value="0.1">0.1x</option>
+                        <option value="0.5">0.5x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="2">2x</option>
+                        <option value="4">4x</option>
+                        <option value="8">8x</option>
+                        <option value="10">10x</option>
+                    </select>
+                    <button class="ff-btn" data-target="50">FF→50</button>
+                    <button class="ff-btn" data-target="100">FF→100</button>
+                    <button class="ff-btn" data-target="150">FF→150</button>
+                </div>
+                <div id="ff-overlay" class="hidden">
+                    <span id="ff-message">Stopping in X points...</span>
+                </div>
+                <div id="game-overlay">
+                    <h2 id="overlay-title">GAME OVER</h2>
+                    <p id="overlay-score">Score: 0</p>
+                    <p id="overlay-earned">Earned: +0</p>
+                    <div>
+                        <button class="overlay-btn" onclick="returnToUpgrade()">UPGRADE</button>
+                        <button class="overlay-btn" onclick="restartGame()">RETRY</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weight Editor Modal -->
+    <div id="weight-editor">
+        <h4>Adjust Weight</h4>
+        <div id="weight-connection-info">
+            <span class="connection-from">From</span>
+            <span class="connection-arrow">→</span>
+            <span class="connection-to">To</span>
+        </div>
+        <input type="range" id="weight-slider" min="-100" max="100" value="0">
+        <span id="weight-value">0.00</span>
+        <div class="quick-weight-buttons">
+            <button class="quick-btn" onclick="setQuickWeight(-2)">-2</button>
+            <button class="quick-btn" onclick="setQuickWeight(-1)">-1</button>
+            <button class="quick-btn" onclick="setQuickWeight(0)">0</button>
+            <button class="quick-btn" onclick="setQuickWeight(1)">1</button>
+            <button class="quick-btn" onclick="setQuickWeight(2)">2</button>
+        </div>
+        <div class="editor-buttons">
+            <button class="editor-btn save" onclick="saveWeight()">Save</button>
+            <button class="editor-btn cancel" onclick="closeWeightEditor()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Network Tooltip -->
+    <div id="network-tooltip">
+        <div class="tooltip-title"></div>
+        <div class="tooltip-desc"></div>
+        <div class="tooltip-range"></div>
+        <div class="tooltip-tip"></div>
+        <canvas id="activation-chart" width="200" height="100" style="display: none; margin-top: 10px; border-radius: 5px;"></canvas>
+    </div>
+
+    <script>
+        // ============================================
+        // GAME STATE
+        // ============================================
+        const GameState = {
+            currency: 0,
+            highScore: 0,
+            currentScore: 0,
+            phase: 'upgrade', // 'upgrade' or 'play'
+            isAIMode: false,
+            gameSpeed: 1,
+
+            // Unlocked features
+            unlockedSpeeds: [0.1, 0.5, 1, 2, 4, 8, 10], // All speeds available by default
+            unlockedInputs: ['constant1'],
+            unlockedFunctions: ['step'],
+            hasAIMode: false,
+            hasShieldOutput: false,
+            hasBackprop: false,
+            hasImprovedLearning: false,
+
+            // Network configuration
+            hiddenLayers: [1], // neurons per layer
+            selectedActivation: 'step',
+
+            // Stats
+            lastScore: 0,
+            lastEarned: 0,
+            totalFlaps: 0,
+            totalFrames: 0
+        };
+
+        // ============================================
+        // SHOP DEFINITIONS
+        // ============================================
+        const ShopItems = {
+            inputs: [
+                // Phase 1 inputs (score 0-50)
+                { id: 'constant1', name: 'Constant 1', cost: 0, desc: 'Always outputs 1.0' },
+                { id: 'birdVel', name: 'Bird Velocity', cost: 3, desc: 'Current velocity', requires: 'constant1' },
+                // Phase 2 inputs (score 50-200) - need pipe gap Y for sine wave
+                { id: 'pipeY', name: 'Next Pipe Gap Y', cost: 15, desc: 'Center of next pipe gap - essential for Phase 2!', requires: 'birdVel' },
+                { id: 'birdY', name: 'Bird Y Position', cost: 20, desc: 'Vertical position of bird', requires: 'pipeY' },
+                // Phase 3 inputs (score 200+) - need wall detection
+                { id: 'wallDist', name: 'Laser Distance', cost: 100, desc: 'Distance to next laser - essential for Phase 3!', requires: 'birdY' }
+            ],
+            size: [
+                { id: 'addNeuron', name: '+1 Neuron (Layer 1)', cost: 25, repeatable: true, max: 8 },
+                { id: 'addLayer', name: '+1 Hidden Layer', cost: 800, repeatable: true, max: 3 }
+            ],
+            functions: [
+                { id: 'step', name: 'Step Function', cost: 0, desc: 'Output 1 if x > 0, else 0' },
+                { id: 'sigmoid', name: 'Sigmoid', cost: 650, desc: 'Smooth S-curve 0 to 1', requires: 'step' },
+                { id: 'relu', name: 'ReLU', cost: 550, desc: 'max(0, x)', requires: 'sigmoid' },
+                { id: 'tanh', name: 'Tanh', cost: 650, desc: 'Smooth -1 to 1', requires: 'relu' }
+            ],
+            training: [
+                { id: 'aiMode', name: 'AI Play Mode', cost: 1, desc: 'Let the neural network play for you' },
+                { id: 'shieldOutput', name: 'Shield Output', cost: 100, desc: 'Add second output for shield activation - needed for Phase 3!', requires: 'aiMode' }
+            ],
+            speeds: [
+                { id: 0.1, name: '0.1x Speed', cost: 0, desc: 'Very slow - great for debugging' },
+                { id: 0.5, name: '0.5x Speed', cost: 0, desc: 'Half speed for observation' },
+                { id: 1, name: '1x Speed', cost: 0, desc: 'Normal speed' },
+                { id: 2, name: '2x Speed', cost: 0, desc: 'Double speed' },
+                { id: 4, name: '4x Speed', cost: 0, desc: 'Fast forward' },
+                { id: 8, name: '8x Speed', cost: 0, desc: 'Very fast' },
+                { id: 10, name: '10x Speed', cost: 0, desc: 'Maximum speed' }
+            ]
+        };
+
+        // Detailed tooltips for shop items
+        const ShopTooltips = {
+            // Inputs - reference the InputTooltips we already defined
+            constant1: 'input',
+            birdY: 'input',
+            birdVel: 'input',
+            pipeY: 'input',
+            wallDist: 'input',
+
+            // Network size
+            addNeuron: {
+                title: 'Add Hidden Neuron',
+                desc: 'Adds one more neuron to the first hidden layer. Each neuron can learn a different pattern or rule.',
+                range: 'Current: shows X/8 neurons',
+                tip: 'MORE NEURONS = more patterns the network can detect. Start with 2-3 neurons. Example: one neuron for "am I too low?", another for "am I falling fast?"'
+            },
+            addLayer: {
+                title: 'Add Hidden Layer',
+                desc: 'Adds a completely new layer of neurons. More layers = ability to combine patterns into more complex decisions.',
+                range: 'Current: shows X/3 layers',
+                tip: 'ADVANCED: Multiple layers let the network build hierarchical rules. Layer 1 might detect "too low" and "too high", Layer 2 combines them into "need to adjust". Usually 1 layer is enough to start!'
+            },
+
+            // Activation functions
+            step: {
+                title: 'Step Function (Default)',
+                desc: 'Binary output: Hidden neurons fire if sum > 0. Output fires if sum >= 0.5.',
+                range: 'Hidden threshold: 0 | Output threshold: 0.5',
+                tip: 'EASIEST TO UNDERSTAND: Hidden neurons fire (1) on any positive sum. The FLAP output requires sum >= 0.5 to fire, so multiple hidden neurons can add up to trigger a flap.'
+            },
+            sigmoid: {
+                title: 'Sigmoid Function',
+                desc: 'Smooth S-curve that squashes any input to a value between 0 and 1. Large negative → ~0, large positive → ~1, zero → 0.5.',
+                range: 'Output: 0 to 1 (smooth curve)',
+                tip: 'RECOMMENDED: Allows gradual/partial activations. A weighted sum of 0 gives 0.5 (uncertain). Very negative gives ~0, very positive gives ~1. Great for nuanced decisions!'
+            },
+            relu: {
+                title: 'ReLU (Rectified Linear Unit)',
+                desc: 'Simple: if input > 0, pass it through unchanged. If input ≤ 0, output 0. Fast and effective.',
+                range: 'Output: 0 to ∞ (linear for positive)',
+                tip: 'GOOD FOR DEEP NETWORKS: Doesn\'t squash large values like sigmoid. If weighted sum is 2.5, output is 2.5. If it\'s -1, output is 0. Can learn faster but outputs aren\'t bounded.'
+            },
+            tanh: {
+                title: 'Tanh (Hyperbolic Tangent)',
+                desc: 'Like sigmoid but outputs -1 to +1 instead of 0 to 1. Zero input → 0 output. Centered around zero.',
+                range: 'Output: -1 to +1 (smooth curve)',
+                tip: 'CENTERED: Unlike sigmoid, negative inputs give negative outputs. Good when you want the network to express "definitely don\'t flap" (-1) vs "definitely flap" (+1) vs "unsure" (0).'
+            },
+
+            // Training
+            aiMode: {
+                title: 'AI Play Mode',
+                desc: 'Unlocks the ability to let your neural network play the game automatically. Watch how your network performs!',
+                range: 'Unlocks: PLAY WITH AI button',
+                tip: 'TEST YOUR NETWORK: After configuring weights, use AI mode to see how your neural network performs. This is essential for tuning - watch what decisions it makes and adjust weights accordingly.'
+            },
+            shieldOutput: {
+                title: 'Shield Output',
+                desc: 'Adds a second output neuron to control the shield. Essential for Phase 3 where walls appear!',
+                range: 'Adds: SHIELD output (in addition to FLAP)',
+                tip: 'PHASE 3 ESSENTIAL: When enabled, your network has two outputs - FLAP and SHIELD. Configure the second output to activate when a wall is near and shield is ready.'
+            }
+        };
+
+        // ============================================
+        // TOOLTIP DEFINITIONS
+        // ============================================
+        const InputTooltips = {
+            constant1: {
+                title: 'Constant 1',
+                desc: 'Always outputs the value 1.0, regardless of game state. Acts as a bias input.',
+                range: 'Value: Always 1.0',
+                tip: 'TIP: Use this as a baseline. With a positive weight, it adds a constant "flap tendency". With negative weight, it suppresses flapping. Useful for setting a default behavior that other inputs modify.'
+            },
+            birdY: {
+                title: 'Bird Y Position',
+                desc: 'Where the bird is vertically on screen. Negative values = near top, positive = near bottom.',
+                range: 'Range: -1 (top) to +1 (bottom)',
+                tip: 'TIP: If bird is below the pipe gap (positive), you probably want to flap. Connect with NEGATIVE weight to output to flap when bird is low.'
+            },
+            birdVel: {
+                title: 'Bird Velocity',
+                desc: 'How fast the bird is moving up or down. Negative = moving up, positive = falling down.',
+                range: 'Range: roughly -0.8 (rising fast) to +1 (falling fast)',
+                tip: 'TIP: High positive velocity means falling fast - might need to flap soon! Connect with POSITIVE weight to flap when falling.'
+            },
+            pipeY: {
+                title: 'Next Pipe Gap Center',
+                desc: 'Vertical center of the gap in the next pipe. Where you need to aim!',
+                range: 'Range: -1 (gap at top) to +1 (gap at bottom)',
+                tip: 'TIP: Compare this to Bird Y. If pipeY > birdY, gap is below bird - don\'t flap. If pipeY < birdY, gap is above - flap!'
+            },
+            timeSinceFlap: {
+                title: 'Time Since Last Flap',
+                desc: 'How many frames since the bird last flapped. Bird falls faster over time.',
+                range: 'Range: 0 (just flapped) to 1 (long time, falling fast)',
+                tip: 'TIP: High value = haven\'t flapped in a while and probably falling. Good trigger for a flap.'
+            },
+            wallDist: {
+                title: 'Laser Distance',
+                desc: 'Distance to the next laser. Lasers appear in Phase 3 (score 100+) and require shielding to pass.',
+                range: 'Range: 0 (laser at bird) to 1 (laser far away)',
+                tip: 'TIP: When laser is close (low value), activate shield! Connect to shield output with positive weight so low distance triggers shield.'
+            }
+        };
+
+        function getOutputTooltip(outputIndex = 0) {
+            const threshold = GameState.selectedActivation === 'tanh' ? '0' : '0.5';
+            const range = GameState.selectedActivation === 'tanh' ? '-1 to +1' :
+                          GameState.selectedActivation === 'relu' ? '0 to ∞' :
+                          GameState.selectedActivation === 'step' ? '0 or 1' : '0 to 1';
+
+            if (outputIndex === 1) {
+                // Shield output
+                return {
+                    title: 'SHIELD Decision',
+                    desc: `Uses ${GameState.selectedActivation} activation. Values above ${threshold} activate the shield, at or below means no shield.`,
+                    range: `Range: ${range} | Threshold: ${threshold}`,
+                    tip: 'TIP: Shield blocks lasers in Phase 3. Has a cooldown after use. Train this output to activate when approaching lasers.'
+                };
+            }
+
+            // Flap output (default)
+            return {
+                title: 'FLAP Decision',
+                desc: `Uses ${GameState.selectedActivation} activation. Values above ${threshold} cause a flap, at or below means no flap.`,
+                range: `Range: ${range} | Threshold: ${threshold}`,
+                tip: 'TIP: The output sums all (input × weight) values, then applies the activation function. Positive weights encourage flapping, negative weights discourage it.'
+            };
+        }
+
+        const HiddenTooltip = {
+            title: 'Hidden Neuron',
+            desc: 'Combines multiple inputs to detect patterns. Each hidden neuron can learn a different "rule" like "flap when low AND falling".',
+            range: 'Value depends on activation function',
+            tip: 'TIP: Hidden neurons let the network learn complex rules. More neurons = more rules it can learn, but harder to tune manually.'
+        };
+
+        const ConnectionTooltip = {
+            title: 'Connection Weight',
+            desc: 'Multiplies the input value. Positive weights pass the signal through, negative weights invert it.',
+            range: 'Range: -2 to +2',
+            tip: 'TIP: Click to adjust! Strong positive = "when input is high, increase output". Strong negative = "when input is high, decrease output".'
+        };
+
+        // ============================================
+        // NEURAL NETWORK
+        // ============================================
+
+        // Get flap threshold based on activation function
+        function getFlapThreshold() {
+            switch (GameState.selectedActivation) {
+                case 'tanh': return 0;      // tanh outputs -1 to 1, centered at 0
+                case 'step': return 0.5;    // step outputs 0 or 1
+                case 'sigmoid': return 0.5; // sigmoid outputs 0 to 1
+                case 'relu': return 0.5;    // relu outputs 0 to ∞
+                default: return 0.5;
+            }
+        }
+
+        // Draw activation function chart with current value indicator
+        function drawActivationChart(preActivationValue, isOutput = false) {
+            const canvas = document.getElementById('activation-chart');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const func = GameState.selectedActivation;
+
+            // Step function threshold differs for hidden vs output
+            const stepThreshold = isOutput ? 0.5 : 0;
+
+            // Clear canvas
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, width, height);
+
+            // Define x range and y range based on activation function
+            let xMin = -4, xMax = 4;
+            let yMin, yMax;
+
+            switch (func) {
+                case 'step':
+                    yMin = -0.2; yMax = 1.2;
+                    break;
+                case 'sigmoid':
+                    yMin = -0.1; yMax = 1.1;
+                    break;
+                case 'relu':
+                    yMin = -0.5; yMax = 4;
+                    break;
+                case 'tanh':
+                    yMin = -1.2; yMax = 1.2;
+                    break;
+                default:
+                    yMin = -0.2; yMax = 1.2;
+            }
+
+            // Helper to convert data coords to canvas coords
+            const toCanvasX = (x) => ((x - xMin) / (xMax - xMin)) * width;
+            const toCanvasY = (y) => height - ((y - yMin) / (yMax - yMin)) * height;
+
+            // Draw axes
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 1;
+
+            // Y axis (at x=0)
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(0), 0);
+            ctx.lineTo(toCanvasX(0), height);
+            ctx.stroke();
+
+            // X axis (at y=0)
+            ctx.beginPath();
+            ctx.moveTo(0, toCanvasY(0));
+            ctx.lineTo(width, toCanvasY(0));
+            ctx.stroke();
+
+            // Draw threshold line (for step function, show where it triggers)
+            if (func === 'step') {
+                ctx.strokeStyle = '#666';
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(stepThreshold), 0);
+                ctx.lineTo(toCanvasX(stepThreshold), height);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Draw activation function curve
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const steps = 100;
+            for (let i = 0; i <= steps; i++) {
+                const x = xMin + (i / steps) * (xMax - xMin);
+                let y;
+
+                switch (func) {
+                    case 'step':
+                        y = (isOutput ? x >= 0.5 : x > 0) ? 1 : 0;
+                        break;
+                    case 'sigmoid':
+                        y = 1 / (1 + Math.exp(-x));
+                        break;
+                    case 'relu':
+                        y = Math.max(0, x);
+                        break;
+                    case 'tanh':
+                        y = Math.tanh(x);
+                        break;
+                    default:
+                        y = (isOutput ? x >= 0.5 : x > 0) ? 1 : 0;
+                }
+
+                const canvasX = toCanvasX(x);
+                const canvasY = toCanvasY(y);
+
+                if (i === 0) {
+                    ctx.moveTo(canvasX, canvasY);
+                } else {
+                    ctx.lineTo(canvasX, canvasY);
+                }
+            }
+            ctx.stroke();
+
+            // Calculate the output value
+            let outputValue;
+            switch (func) {
+                case 'step':
+                    outputValue = (isOutput ? preActivationValue >= 0.5 : preActivationValue > 0) ? 1 : 0;
+                    break;
+                case 'sigmoid':
+                    outputValue = 1 / (1 + Math.exp(-preActivationValue));
+                    break;
+                case 'relu':
+                    outputValue = Math.max(0, preActivationValue);
+                    break;
+                case 'tanh':
+                    outputValue = Math.tanh(preActivationValue);
+                    break;
+                default:
+                    outputValue = (isOutput ? preActivationValue >= 0.5 : preActivationValue > 0) ? 1 : 0;
+            }
+
+            // Clamp preActivation for display purposes
+            const clampedX = Math.max(xMin, Math.min(xMax, preActivationValue));
+
+            // Draw vertical line from input point to curve
+            ctx.strokeStyle = '#ff9800';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(clampedX), height);
+            ctx.lineTo(toCanvasX(clampedX), toCanvasY(outputValue));
+            ctx.stroke();
+
+            // Draw horizontal line from curve to y-axis
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(clampedX), toCanvasY(outputValue));
+            ctx.lineTo(0, toCanvasY(outputValue));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw current position marker
+            ctx.fillStyle = '#ff9800';
+            ctx.beginPath();
+            ctx.arc(toCanvasX(clampedX), toCanvasY(outputValue), 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw labels
+            ctx.fillStyle = '#aaa';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'left';
+
+            // Input value label
+            ctx.fillStyle = '#ff9800';
+            const inputLabel = `in: ${preActivationValue.toFixed(2)}`;
+            ctx.fillText(inputLabel, 5, height - 5);
+
+            // Output value label
+            const outputLabel = `out: ${outputValue.toFixed(2)}`;
+            ctx.fillText(outputLabel, 5, 12);
+
+            // Show if above threshold
+            const aboveThreshold = outputValue > threshold;
+            ctx.fillStyle = aboveThreshold ? '#4CAF50' : '#f44336';
+            ctx.fillText(aboveThreshold ? 'FIRE' : 'no fire', width - 45, 12);
+        }
+
+        class NeuralNetwork {
+            constructor() {
+                this.weights = [];
+                this.biases = [];
+                this.activations = [];
+                this.preActivations = []; // Store pre-activation values (before activation function)
+                this.lastInputs = [];
+                this.lastOutputs = [];
+                this.rebuild();
+            }
+
+            rebuild() {
+                const inputCount = GameState.unlockedInputs.length;
+                const outputCount = GameState.hasShieldOutput ? 2 : 1; // 2 outputs if shield enabled
+                const layers = [inputCount, ...GameState.hiddenLayers, outputCount];
+
+                // Deep copy old weights to prevent any reference issues
+                const oldWeights = this.weights ? JSON.parse(JSON.stringify(this.weights)) : [];
+                const oldBiases = this.biases ? JSON.parse(JSON.stringify(this.biases)) : [];
+
+                this.weights = [];
+                this.biases = [];
+
+                for (let i = 0; i < layers.length - 1; i++) {
+                    const layerWeights = [];
+                    const layerBiases = [];
+
+                    for (let j = 0; j < layers[i + 1]; j++) {
+                        const neuronWeights = [];
+                        for (let k = 0; k < layers[i]; k++) {
+                            // Preserve existing weight or default to +1 for new connections
+                            const existingWeight = oldWeights[i]?.[j]?.[k];
+                            neuronWeights.push(existingWeight !== undefined ? existingWeight : 1);
+                        }
+                        layerWeights.push(neuronWeights);
+                        // Preserve existing bias or default to 0
+                        const existingBias = oldBiases[i]?.[j];
+                        layerBiases.push(existingBias !== undefined ? existingBias : 0);
+                    }
+
+                    this.weights.push(layerWeights);
+                    this.biases.push(layerBiases);
+                }
+            }
+
+            activate(x, func, isOutput = false) {
+                switch (func) {
+                    case 'step':
+                        // Hidden neurons fire on any positive, output requires >= 0.5
+                        return isOutput ? (x >= 0.5 ? 1 : 0) : (x > 0 ? 1 : 0);
+                    case 'sigmoid': return 1 / (1 + Math.exp(-x));
+                    case 'relu': return Math.max(0, x);
+                    case 'tanh': return Math.tanh(x);
+                    default: return isOutput ? (x >= 0.5 ? 1 : 0) : (x > 0 ? 1 : 0);
+                }
+            }
+
+            forward(inputs) {
+                this.lastInputs = inputs;
+                this.activations = [inputs];
+                this.preActivations = [inputs]; // Inputs have no pre-activation
+                let current = inputs;
+
+                for (let i = 0; i < this.weights.length; i++) {
+                    const next = [];
+                    const preNext = []; // Pre-activation values for this layer
+                    const isOutput = i === this.weights.length - 1;
+                    const activationFunc = GameState.selectedActivation;
+
+                    for (let j = 0; j < this.weights[i].length; j++) {
+                        let sum = this.biases[i][j];
+                        for (let k = 0; k < current.length; k++) {
+                            sum += current[k] * this.weights[i][j][k];
+                        }
+                        preNext.push(sum);
+                        next.push(this.activate(sum, activationFunc, isOutput));
+                    }
+
+                    current = next;
+                    this.activations.push(current);
+                    this.preActivations.push(preNext);
+                }
+
+                this.lastOutputs = current;
+                return current[0];
+            }
+
+            getStructure() {
+                const inputCount = GameState.unlockedInputs.length;
+                const outputCount = GameState.hasShieldOutput ? 2 : 1;
+                return [inputCount, ...GameState.hiddenLayers, outputCount];
+            }
+
+            // Returns [flapOutput, shieldOutput] or just flapOutput
+            forwardAll(inputs) {
+                this.lastInputs = inputs;
+                this.activations = [inputs];
+                this.preActivations = [inputs]; // Inputs have no pre-activation
+                let current = inputs;
+
+                for (let i = 0; i < this.weights.length; i++) {
+                    const next = [];
+                    const preNext = []; // Pre-activation values for this layer
+                    const isOutput = i === this.weights.length - 1;
+                    const activationFunc = GameState.selectedActivation;
+
+                    for (let j = 0; j < this.weights[i].length; j++) {
+                        let sum = this.biases[i][j];
+                        for (let k = 0; k < current.length; k++) {
+                            sum += current[k] * this.weights[i][j][k];
+                        }
+                        preNext.push(sum);
+                        next.push(this.activate(sum, activationFunc, isOutput));
+                    }
+
+                    current = next;
+                    this.activations.push(current);
+                    this.preActivations.push(preNext);
+                }
+
+                this.lastOutputs = current;
+                return current; // Returns array of all outputs
+            }
+
+            setWeight(layerIdx, neuronIdx, weightIdx, value) {
+                if (this.weights[layerIdx] &&
+                    this.weights[layerIdx][neuronIdx] &&
+                    this.weights[layerIdx][neuronIdx][weightIdx] !== undefined) {
+                    this.weights[layerIdx][neuronIdx][weightIdx] = value;
+                }
+            }
+
+            // Simple backpropagation based on whether the bird survived
+            train(survived, score) {
+                if (!GameState.hasBackprop) return;
+
+                const learningRate = GameState.hasImprovedLearning ? 0.1 : 0.05;
+                const reward = survived ? 0.1 : -0.1;
+
+                // Adjust weights slightly based on outcome
+                for (let i = 0; i < this.weights.length; i++) {
+                    for (let j = 0; j < this.weights[i].length; j++) {
+                        for (let k = 0; k < this.weights[i][j].length; k++) {
+                            const noise = (Math.random() - 0.5) * 0.1;
+                            this.weights[i][j][k] += reward * learningRate + noise * learningRate;
+                            // Clamp weights
+                            this.weights[i][j][k] = Math.max(-2, Math.min(2, this.weights[i][j][k]));
+                        }
+                    }
+                }
+            }
+        }
+
+        let neuralNetwork = new NeuralNetwork();
+
+        // ============================================
+        // FLAPPY BIRD GAME ENGINE
+        // ============================================
+        class Bird {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = 100;
+                this.y = 250;
+                this.velocity = 0;
+                this.gravity = 0.5;
+                this.flapStrength = -8;
+                this.width = 34;
+                this.height = 24;
+                this.framesSinceFlap = 0;
+            }
+
+            flap() {
+                this.velocity = this.flapStrength;
+                this.framesSinceFlap = 0;
+            }
+
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                this.framesSinceFlap++;
+            }
+
+            draw(ctx) {
+                // Bird body
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Wing
+                ctx.fillStyle = '#ffaa00';
+                const wingY = this.y + Math.sin(Date.now() / 50) * 3;
+                ctx.beginPath();
+                ctx.ellipse(this.x - 5, wingY, 10, 6, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Eye
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(this.x + 8, this.y - 3, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(this.x + 9, this.y - 4, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Beak
+                ctx.fillStyle = '#ff6600';
+                ctx.beginPath();
+                ctx.moveTo(this.x + 15, this.y);
+                ctx.lineTo(this.x + 25, this.y + 3);
+                ctx.lineTo(this.x + 15, this.y + 6);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        class Pipe {
+            constructor(x, gapY, gapSize, speed, phase = 1, pipeNumber = 0) {
+                this.x = x;
+                this.gapY = gapY;
+                this.gapSize = gapSize;
+                this.width = 60;
+                this.speed = speed;
+                this.passed = false;
+                this.phase = phase;
+                this.value = phase === 3 ? 10 : phase === 2 ? 5 : 1; // Currency value: Phase 3: 10, Phase 2: 5, Phase 1: 1
+                this.pipeNumber = pipeNumber; // This pipe's number (1-indexed)
+            }
+
+            update() {
+                this.x -= this.speed;
+            }
+
+            draw(ctx, canvasHeight) {
+                const gradient = ctx.createLinearGradient(this.x, 0, this.x + this.width, 0);
+
+                // Gray if passed OR if this pipe was already passed in a previous run
+                const alreadyCollected = this.passed || this.pipeNumber <= GameState.highScore;
+
+                if (alreadyCollected) {
+                    // Desaturated gray for collected pipes
+                    gradient.addColorStop(0, '#888888');
+                    gradient.addColorStop(0.5, '#777777');
+                    gradient.addColorStop(1, '#666666');
+                } else if (this.phase === 3) {
+                    // Blue pipes for Phase 3
+                    gradient.addColorStop(0, '#3498db');
+                    gradient.addColorStop(0.5, '#2980b9');
+                    gradient.addColorStop(1, '#1a5276');
+                } else if (this.phase === 2) {
+                    // Yellow pipes for Phase 2
+                    gradient.addColorStop(0, '#f1c40f');
+                    gradient.addColorStop(0.5, '#f39c12');
+                    gradient.addColorStop(1, '#d68910');
+                } else {
+                    // Green pipes for Phase 1
+                    gradient.addColorStop(0, '#2ecc71');
+                    gradient.addColorStop(0.5, '#27ae60');
+                    gradient.addColorStop(1, '#1e8449');
+                }
+
+                ctx.fillStyle = gradient;
+
+                // Top pipe
+                const topHeight = this.gapY - this.gapSize / 2;
+                ctx.fillRect(this.x, 0, this.width, topHeight);
+                ctx.fillRect(this.x - 5, topHeight - 30, this.width + 10, 30);
+
+                // Bottom pipe
+                const bottomY = this.gapY + this.gapSize / 2;
+                ctx.fillRect(this.x, bottomY, this.width, canvasHeight - bottomY);
+                ctx.fillRect(this.x - 5, bottomY, this.width + 10, 30);
+
+                // Pipe edges
+                const edgeColor = alreadyCollected ? '#555555' :
+                    this.phase === 3 ? '#1a5276' : this.phase === 2 ? '#9a7b0a' : '#145a32';
+                ctx.strokeStyle = edgeColor;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, 0, this.width, topHeight);
+                ctx.strokeRect(this.x - 5, topHeight - 30, this.width + 10, 30);
+                ctx.strokeRect(this.x, bottomY, this.width, canvasHeight - bottomY);
+                ctx.strokeRect(this.x - 5, bottomY, this.width + 10, 30);
+            }
+
+            collidesWith(bird) {
+                const birdLeft = bird.x - bird.width / 2;
+                const birdRight = bird.x + bird.width / 2;
+                const birdTop = bird.y - bird.height / 2;
+                const birdBottom = bird.y + bird.height / 2;
+
+                if (birdRight > this.x && birdLeft < this.x + this.width) {
+                    const topPipeBottom = this.gapY - this.gapSize / 2;
+                    const bottomPipeTop = this.gapY + this.gapSize / 2;
+
+                    if (birdTop < topPipeBottom || birdBottom > bottomPipeTop) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        // Wall class for Phase 3 - full-screen walls that require shielding
+        class Wall {
+            constructor(x, speed) {
+                this.x = x;
+                this.width = 20;
+                this.speed = speed;
+                this.passed = false;
+            }
+
+            update() {
+                this.x -= this.speed;
+            }
+
+            draw(ctx, canvasHeight) {
+                // Red warning wall
+                const gradient = ctx.createLinearGradient(this.x, 0, this.x + this.width, 0);
+                gradient.addColorStop(0, '#e74c3c');
+                gradient.addColorStop(0.5, '#c0392b');
+                gradient.addColorStop(1, '#e74c3c');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(this.x, 0, this.width, canvasHeight);
+
+                // Warning stripes
+                ctx.fillStyle = '#2c3e50';
+                const stripeHeight = 30;
+                for (let y = 0; y < canvasHeight; y += stripeHeight * 2) {
+                    ctx.fillRect(this.x, y, this.width, stripeHeight);
+                }
+
+                // Glow effect
+                ctx.shadowColor = '#e74c3c';
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.3)';
+                ctx.fillRect(this.x - 10, 0, this.width + 20, canvasHeight);
+                ctx.shadowBlur = 0;
+            }
+
+            collidesWith(bird) {
+                const birdLeft = bird.x - bird.width / 2;
+                const birdRight = bird.x + bird.width / 2;
+                return birdRight > this.x && birdLeft < this.x + this.width;
+            }
+        }
+
+        class Game {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.bird = new Bird();
+                this.pipes = [];
+                this.score = 0;
+                this.isRunning = false;
+                this.gameOver = false;
+                this.frameCount = 0;
+                this.waitingForStart = true; // Wait for first input
+
+                // Difficulty settings for 3-phase progression
+                this.baseSpeed = 2.5;
+                this.baseGapSize = 320;
+                this.baseSpawnInterval = 120;
+
+                // Wall/Shield mechanics (Phase 3)
+                this.walls = [];
+                this.scorePopups = []; // Floating score indicators
+                this.currencyEarnedThisRun = 0; // Track currency earned this run
+                this.nextPipeNumber = 0; // Track pipe count for spawning
+                this.shieldActive = false;
+                this.shieldCooldown = 0;
+                this.shieldDuration = 0;
+                this.nextWallScore = 100 + 10 + Math.floor(Math.random() * 11); // First wall at 110-120 pipes
+            }
+
+            getDifficulty() {
+                // Phase 1: Pipes 0-49 (50 pipes) - Easy, consistent pipes
+                // Phase 2: Pipes 50-99 (50 pipes) - Sine wave variation
+                // Phase 3: Pipes 100+ - Walls requiring shield
+
+                let speed, gapSize, spawnInterval;
+
+                if (this.score < 50) {
+                    // Phase 1: Very easy, slight progression
+                    speed = this.baseSpeed + this.score * 0.02;
+                    gapSize = this.baseGapSize - this.score * 0.5;
+                    spawnInterval = this.baseSpawnInterval - this.score * 0.3;
+                } else if (this.score < 100) {
+                    // Phase 2: Deliberate sine wave with tight gaps (50 pipes)
+                    const phase2Progress = (this.score - 50) / 50;
+                    speed = 3 + phase2Progress * 0.5; // Slower speed to emphasize positioning
+                    gapSize = 220 - phase2Progress * 40; // Tight: 220 down to 180
+                    spawnInterval = 120 - phase2Progress * 10; // More spacing between pipes
+                } else {
+                    // Phase 3: Harder, walls appear
+                    const phase3Progress = Math.min((this.score - 100) / 50, 1);
+                    speed = 4.5 + phase3Progress * 1.5;
+                    gapSize = 265 - phase3Progress * 40;
+                    spawnInterval = 90 - phase3Progress * 15;
+                }
+
+                return {
+                    speed: Math.min(speed, 8),
+                    gapSize: Math.max(gapSize, 180),
+                    spawnInterval: Math.max(spawnInterval, 60)
+                };
+            }
+
+            reset() {
+                this.bird.reset();
+                this.pipes = [];
+                this.walls = [];
+                this.scorePopups = [];
+                this.currencyEarnedThisRun = 0;
+                this.nextPipeNumber = 0;
+                this.score = 0;
+                this.isRunning = false;
+                this.gameOver = false;
+                this.frameCount = 0;
+                this.waitingForStart = true;
+                this.shieldActive = false;
+                this.shieldCooldown = 0;
+                this.shieldDuration = 0;
+                this.nextWallScore = 100 + 10 + Math.floor(Math.random() * 11); // First wall at 110-120 pipes
+                GameState.totalFlaps = 0;
+                GameState.totalFrames = 0;
+            }
+
+            start() {
+                this.reset();
+                this.isRunning = true;
+                // Don't spawn pipe yet - wait for first input
+            }
+
+            spawnPipe() {
+                const diff = this.getDifficulty();
+                const minY = 80 + diff.gapSize / 2;
+                const maxY = this.canvas.height - 80 - diff.gapSize / 2;
+                const centerY = (minY + maxY) / 2;
+                const amplitude = (maxY - minY) / 2;
+
+                // nextPipeNumber is the pipe count (0-indexed)
+                let gapY;
+                if (this.nextPipeNumber < 50) {
+                    // Phase 1: Very little variation - pipes near center with tiny random offset
+                    gapY = centerY + (Math.random() - 0.5) * 60;
+                } else if (this.nextPipeNumber < 100) {
+                    // Phase 2: Pure sine wave - gap swings full top to bottom, no randomness
+                    const pipeInPhase = this.nextPipeNumber - 50;
+                    const sineOffset = Math.sin(pipeInPhase * 0.5) * amplitude * 0.95; // Higher frequency swing
+                    gapY = centerY + sineOffset; // No random noise - pure sine wave
+                } else {
+                    // Phase 3: More predictable sine wave with mild randomness
+                    const sineOffset = Math.sin(this.nextPipeNumber * 0.15) * amplitude * 0.6;
+                    gapY = centerY + sineOffset + (Math.random() - 0.5) * 40;
+                }
+
+                // Clamp to valid range
+                gapY = Math.max(minY, Math.min(maxY, gapY));
+
+                // Determine current phase for pipe color/currency value
+                const phase = this.nextPipeNumber < 50 ? 1 : this.nextPipeNumber < 100 ? 2 : 3;
+                const pipeValue = phase === 3 ? 10 : phase === 2 ? 5 : 1; // Currency value
+                this.nextPipeNumber++;
+                this.pipes.push(new Pipe(this.canvas.width + 50, gapY, diff.gapSize, diff.speed, phase, this.nextPipeNumber));
+            }
+
+            getInputs() {
+                const inputs = [];
+                const nextPipe = this.pipes.find(p => p.x + p.width > this.bird.x) || this.pipes[0];
+
+                // Normalize all inputs to roughly -1 to 1 range
+                for (const inputId of GameState.unlockedInputs) {
+                    switch (inputId) {
+                        case 'constant1':
+                            inputs.push(1.0);
+                            break;
+                        case 'birdY':
+                            inputs.push((this.bird.y / this.canvas.height) * 2 - 1);
+                            break;
+                        case 'birdVel':
+                            inputs.push(this.bird.velocity / 10);
+                            break;
+                        case 'pipeY':
+                            inputs.push(nextPipe ? (nextPipe.gapY / this.canvas.height) * 2 - 1 : 0);
+                            break;
+                        case 'timeSinceFlap':
+                            inputs.push(Math.min(this.bird.framesSinceFlap / 30, 1));
+                            break;
+                        case 'wallDist':
+                            // Distance to next wall (0 = wall at bird, 1 = far away)
+                            const nextWall = this.walls.find(w => w.x > this.bird.x);
+                            inputs.push(nextWall ? Math.min((nextWall.x - this.bird.x) / this.canvas.width, 1) : 1);
+                            break;
+                    }
+                }
+
+                return inputs;
+            }
+
+            update() {
+                if (!this.isRunning || this.gameOver) return;
+
+                // Wait for first input before starting physics
+                if (this.waitingForStart) {
+                    // AI auto-starts
+                    if (GameState.isAIMode) {
+                        this.waitingForStart = false;
+                        this.spawnPipe(); // Spawn first pipe
+                    }
+                    return;
+                }
+
+                GameState.totalFrames++;
+                this.frameCount++;
+
+                // AI decision
+                if (GameState.isAIMode) {
+                    const inputs = this.getInputs();
+                    const outputs = neuralNetwork.forwardAll(inputs);
+
+                    // Output 0: Flap decision
+                    if (outputs[0] > getFlapThreshold()) {
+                        this.bird.flap();
+                        GameState.totalFlaps++;
+                    }
+
+                    // Output 1: Shield decision (if shield output is unlocked)
+                    if (GameState.hasShieldOutput && outputs.length > 1) {
+                        if (outputs[1] > getFlapThreshold()) {
+                            this.activateShield();
+                        }
+                    }
+                }
+
+                // Update bird
+                this.bird.update();
+
+                // Check boundaries
+                if (this.bird.y < 0 || this.bird.y > this.canvas.height) {
+                    this.endGame();
+                    return;
+                }
+
+                // Update pipes
+                const diff = this.getDifficulty();
+                for (const pipe of this.pipes) {
+                    pipe.speed = diff.speed;
+                    pipe.update();
+
+                    // Check collision
+                    if (pipe.collidesWith(this.bird)) {
+                        this.endGame();
+                        return;
+                    }
+
+                    // Score = pipe count, Currency = phase-based value
+                    if (!pipe.passed && pipe.x + pipe.width < this.bird.x) {
+                        pipe.passed = true;
+                        const oldScore = this.score;
+                        this.score += 1; // Score is just pipe count
+
+                        // Currency earned only for new high score territory
+                        if (this.score > GameState.highScore) {
+                            // Add currency based on pipe's phase value
+                            GameState.currency += pipe.value;
+                            this.currencyEarnedThisRun += pipe.value;
+                            document.getElementById('currency-display').textContent = GameState.currency;
+
+                            // Add floating popup showing currency earned
+                            this.scorePopups.push({
+                                x: pipe.x + pipe.width,
+                                y: pipe.gapY,
+                                value: pipe.value,
+                                life: 60 // frames
+                            });
+                        }
+
+                        // Win condition: reach pipe 200
+                        if (this.score >= 200) {
+                            this.endGame(true); // Win!
+                            return;
+                        }
+                    }
+                }
+
+                // Remove off-screen pipes
+                this.pipes = this.pipes.filter(p => p.x > -100);
+
+                // Update and remove expired score popups
+                for (const popup of this.scorePopups) {
+                    popup.y -= 1; // Float upward
+                    popup.life--;
+                }
+                this.scorePopups = this.scorePopups.filter(p => p.life > 0);
+
+                // Spawn new pipes
+                const lastPipe = this.pipes[this.pipes.length - 1];
+                if (!lastPipe || lastPipe.x < this.canvas.width - diff.spawnInterval) {
+                    this.spawnPipe();
+                }
+
+                // Phase 3: Wall/Shield mechanics (score >= 100 pipes)
+                if (this.score >= 100) {
+                    // Update shield cooldown
+                    if (this.shieldCooldown > 0) {
+                        this.shieldCooldown--;
+                    }
+                    if (this.shieldDuration > 0) {
+                        this.shieldDuration--;
+                        if (this.shieldDuration === 0) {
+                            this.shieldActive = false;
+                        }
+                    }
+
+                    // Spawn walls periodically (every ~15 pipes with variance)
+                    if (this.score >= this.nextWallScore) {
+                        this.walls.push(new Wall(this.canvas.width + 100, diff.speed));
+                        // Next wall spawns 10-20 pipes later
+                        this.nextWallScore = this.score + 10 + Math.floor(Math.random() * 11);
+                    }
+
+                    // Update walls
+                    for (const wall of this.walls) {
+                        wall.speed = diff.speed;
+                        wall.update();
+
+                        // Check collision - shield protects
+                        if (wall.collidesWith(this.bird)) {
+                            if (this.shieldActive) {
+                                // Shield blocks the wall - mark as passed
+                                if (!wall.passed) {
+                                    wall.passed = true;
+                                }
+                            } else {
+                                this.endGame();
+                                return;
+                            }
+                        }
+                    }
+
+                    // Remove off-screen walls
+                    this.walls = this.walls.filter(w => w.x > -50);
+                }
+            }
+
+            // Activate shield (called by neural network or player)
+            activateShield() {
+                if (this.shieldCooldown === 0 && !this.shieldActive) {
+                    this.shieldActive = true;
+                    this.shieldDuration = 39; // Shield lasts 39 frames (30% longer)
+                    this.shieldCooldown = 60; // 1 second cooldown at 60fps
+                    return true;
+                }
+                return false;
+            }
+
+            draw() {
+                // Sky gradient
+                const skyGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                skyGradient.addColorStop(0, '#87CEEB');
+                skyGradient.addColorStop(1, '#E0F6FF');
+                this.ctx.fillStyle = skyGradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Clouds
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                this.drawCloud(100, 80, 40);
+                this.drawCloud(300, 120, 50);
+                this.drawCloud(550, 60, 35);
+                this.drawCloud(700, 100, 45);
+
+                // Draw pipes
+                for (const pipe of this.pipes) {
+                    pipe.draw(this.ctx, this.canvas.height);
+                }
+
+                // Draw score popups
+                for (const popup of this.scorePopups) {
+                    const alpha = popup.life / 60;
+                    this.ctx.globalAlpha = alpha;
+                    this.ctx.fillStyle = popup.value >= 10 ? '#3498db' : popup.value >= 3 ? '#f1c40f' : '#fff';
+                    this.ctx.font = 'bold 24px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(`+${popup.value}`, popup.x, popup.y);
+                    this.ctx.globalAlpha = 1;
+                }
+
+                // Draw walls (Phase 3)
+                for (const wall of this.walls) {
+                    wall.draw(this.ctx, this.canvas.height);
+                }
+
+                // Draw bird
+                this.bird.draw(this.ctx);
+
+                // Draw shield effect around bird if active
+                if (this.shieldActive) {
+                    this.ctx.strokeStyle = '#3498db';
+                    this.ctx.lineWidth = 4;
+                    this.ctx.shadowColor = '#3498db';
+                    this.ctx.shadowBlur = 15;
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.bird.x, this.bird.y, 35, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                    this.ctx.shadowBlur = 0;
+                }
+
+                // Score
+                this.ctx.fillStyle = '#000';
+                this.ctx.font = 'bold 36px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(this.score, this.canvas.width / 2, 50);
+
+                // Difficulty indicator
+                const diff = this.getDifficulty();
+                this.ctx.font = '14px Arial';
+                this.ctx.fillStyle = '#666';
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText(`Speed: ${diff.speed.toFixed(1)}x | Gap: ${Math.round(diff.gapSize)}px`, 10, this.canvas.height - 10);
+
+                // AI mode indicator
+                if (GameState.isAIMode) {
+                    this.ctx.fillStyle = '#4ecca3';
+                    this.ctx.font = 'bold 16px Arial';
+                    this.ctx.textAlign = 'right';
+                    this.ctx.fillText('AI MODE', this.canvas.width - 10, 30);
+                }
+
+                // Phase indicator
+                let phase = this.score < 50 ? 'Phase 1' : this.score < 100 ? 'Phase 2' : 'Phase 3';
+                this.ctx.fillStyle = '#666';
+                this.ctx.font = '14px Arial';
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText(phase, this.canvas.width - 10, this.canvas.height - 10);
+
+                // Shield status (show if Shield Output purchased, at any phase)
+                if (GameState.hasShieldOutput) {
+                    const shieldReady = this.shieldCooldown === 0 && !this.shieldActive;
+                    const cooldownPct = 1 - (this.shieldCooldown / 60);
+
+                    // Shield bar background
+                    this.ctx.fillStyle = '#333';
+                    this.ctx.fillRect(10, 60, 100, 20);
+
+                    // Shield bar fill
+                    if (this.shieldActive) {
+                        this.ctx.fillStyle = '#3498db';
+                        const activePct = this.shieldDuration / 39;
+                        this.ctx.fillRect(10, 60, 100 * activePct, 20);
+                    } else {
+                        this.ctx.fillStyle = shieldReady ? '#2ecc71' : '#e74c3c';
+                        this.ctx.fillRect(10, 60, 100 * cooldownPct, 20);
+                    }
+
+                    // Shield label
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = 'bold 12px Arial';
+                    this.ctx.textAlign = 'left';
+                    this.ctx.fillText(this.shieldActive ? 'SHIELD!' : shieldReady ? 'READY' : 'COOLDOWN', 15, 75);
+                }
+
+                // "Press SPACE to start" message
+                if (this.waitingForStart && !GameState.isAIMode) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = 'bold 32px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('Press SPACE or Click to Start', this.canvas.width / 2, this.canvas.height / 2);
+
+                    this.ctx.font = '18px Arial';
+                    this.ctx.fillStyle = '#aaa';
+                    this.ctx.fillText('SPACE/Click = Flap | S = Shield (Phase 3)', this.canvas.width / 2, this.canvas.height / 2 + 40);
+                }
+            }
+
+            drawCloud(x, y, size) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, size, 0, Math.PI * 2);
+                this.ctx.arc(x + size * 0.8, y - size * 0.2, size * 0.7, 0, Math.PI * 2);
+                this.ctx.arc(x + size * 1.5, y, size * 0.8, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            endGame(isWin = false) {
+                this.gameOver = true;
+                this.isRunning = false;
+
+                // Update stats
+                GameState.lastScore = this.score;
+                GameState.currentScore = this.score;
+
+                // Use tracked currency earned this run (already added in real-time)
+                GameState.lastEarned = this.currencyEarnedThisRun;
+
+                // Update high score
+                if (this.score > GameState.highScore) {
+                    GameState.highScore = this.score;
+                    updateFFButtons(); // Show newly unlocked FF buttons
+                }
+
+                // Update header display
+                document.getElementById('currency-display').textContent = GameState.currency;
+                document.getElementById('highscore-display').textContent = GameState.highScore;
+
+                saveGame();
+                showGameOver(isWin);
+            }
+        }
+
+        // ============================================
+        // NETWORK VISUALIZATION
+        // ============================================
+        let hoveredConnection = null; // Track hovered connection for highlighting (declared here for drawNetwork access)
+
+        function drawNetwork(canvas, mini = false, showNumbers = false) {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const structure = neuralNetwork.getStructure();
+            const layerCount = structure.length;
+            const padding = mini ? 15 : 50;
+            const layerSpacing = (width - padding * 2) / (layerCount - 1);
+
+            // Calculate node positions
+            const nodes = [];
+            for (let i = 0; i < layerCount; i++) {
+                const layerNodes = [];
+                const nodeCount = structure[i];
+                const nodeSpacing = (height - padding * 2) / (nodeCount + 1);
+
+                for (let j = 0; j < nodeCount; j++) {
+                    layerNodes.push({
+                        x: padding + i * layerSpacing,
+                        y: padding + (j + 1) * nodeSpacing,
+                        activation: neuralNetwork.activations[i] ? neuralNetwork.activations[i][j] : 0
+                    });
+                }
+                nodes.push(layerNodes);
+            }
+
+            // Draw connections
+            for (let i = 0; i < nodes.length - 1; i++) {
+                for (let j = 0; j < nodes[i + 1].length; j++) {
+                    for (let k = 0; k < nodes[i].length; k++) {
+                        const weight = neuralNetwork.weights[i] && neuralNetwork.weights[i][j]
+                            ? neuralNetwork.weights[i][j][k] : 0;
+
+                        // Check if this connection is hovered
+                        const isHovered = !mini && hoveredConnection &&
+                            hoveredConnection.layer === i &&
+                            hoveredConnection.from === k &&
+                            hoveredConnection.to === j;
+
+                        const intensity = Math.abs(weight);
+                        let r, g, b, alpha, lineWidth;
+
+                        if (isHovered) {
+                            // Bright highlight for hovered connection
+                            r = 255;
+                            g = 255;
+                            b = 100;
+                            alpha = 1;
+                            lineWidth = Math.max(4, intensity * 4);
+                        } else {
+                            r = weight < 0 ? 255 : 100;
+                            g = weight > 0 ? 200 : 100;
+                            b = 100;
+                            alpha = Math.min(intensity * 0.5 + 0.2, 1);
+                            lineWidth = Math.max(1, intensity * 3);
+                        }
+
+                        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                        ctx.lineWidth = lineWidth;
+
+                        ctx.beginPath();
+                        ctx.moveTo(nodes[i][k].x, nodes[i][k].y);
+                        ctx.lineTo(nodes[i + 1][j].x, nodes[i + 1][j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw nodes
+            const nodeRadius = mini ? 8 : 15;
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = 0; j < nodes[i].length; j++) {
+                    const node = nodes[i][j];
+                    const activation = node.activation || 0;
+
+                    // Glow effect
+                    if (activation > 0.1) {
+                        const gradient = ctx.createRadialGradient(
+                            node.x, node.y, nodeRadius,
+                            node.x, node.y, nodeRadius * 2
+                        );
+                        gradient.addColorStop(0, `rgba(78, 204, 163, ${activation * 0.5})`);
+                        gradient.addColorStop(1, 'rgba(78, 204, 163, 0)');
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, nodeRadius * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Node
+                    ctx.fillStyle = i === 0 ? '#667eea' :
+                                   i === nodes.length - 1 ? '#4ecca3' : '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Activation value
+                    if (showNumbers || (!mini && activation > 0)) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = mini ? '8px Arial' : '10px Arial';
+                        ctx.textAlign = 'center';
+                        const displayVal = activation !== undefined ? activation.toFixed(2) : '0.00';
+                        ctx.fillText(displayVal, node.x, node.y + (mini ? 3 : 4));
+                    }
+                }
+            }
+
+            // Labels
+            if (!mini) {
+                ctx.fillStyle = '#888';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+
+                // Input labels
+                const inputLabels = GameState.unlockedInputs.map(id => {
+                    const item = ShopItems.inputs.find(i => i.id === id);
+                    return item ? item.name.substring(0, 8) : id;
+                });
+
+                for (let i = 0; i < nodes[0].length; i++) {
+                    ctx.fillText(inputLabels[i] || '', nodes[0][i].x, nodes[0][i].y + nodeRadius + 15);
+                }
+
+                // Hidden layer labels (H1, H2, H3, etc.)
+                ctx.fillStyle = '#aa8800';
+                ctx.font = '10px Arial';
+                for (let layerIdx = 1; layerIdx < nodes.length - 1; layerIdx++) {
+                    const layer = nodes[layerIdx];
+                    for (let j = 0; j < layer.length; j++) {
+                        const label = `H${layerIdx}-${j + 1}`;
+                        ctx.fillText(label, layer[j].x, layer[j].y + nodeRadius + 12);
+                    }
+                }
+
+                // Output labels
+                ctx.fillStyle = '#888';
+                ctx.font = '12px Arial';
+                const lastLayer = nodes[nodes.length - 1];
+                ctx.fillText('FLAP?', lastLayer[0].x, lastLayer[0].y + nodeRadius + 15);
+                if (GameState.hasShieldOutput && lastLayer.length > 1) {
+                    ctx.fillText('SHIELD?', lastLayer[1].x, lastLayer[1].y + nodeRadius + 15);
+                }
+            }
+
+            // Store node positions for click detection
+            canvas.nodePositions = nodes;
+        }
+
+        // ============================================
+        // SHOP UI
+        // ============================================
+        // Helper function to add tooltip hover to shop items
+        function addShopTooltip(element, itemId) {
+            const tooltip = document.getElementById('network-tooltip');
+
+            element.addEventListener('mouseenter', (e) => {
+                let tooltipData = ShopTooltips[itemId];
+
+                // If it's an input reference, get from InputTooltips
+                if (tooltipData === 'input') {
+                    tooltipData = InputTooltips[itemId];
+                }
+
+                if (!tooltipData) return;
+
+                tooltip.querySelector('.tooltip-title').textContent = tooltipData.title;
+                tooltip.querySelector('.tooltip-desc').textContent = tooltipData.desc;
+                tooltip.querySelector('.tooltip-range').textContent = tooltipData.range;
+                tooltip.querySelector('.tooltip-tip').textContent = tooltipData.tip;
+
+                // Position tooltip
+                const rect = element.getBoundingClientRect();
+                let tooltipX = rect.right + 10;
+                let tooltipY = rect.top;
+
+                // Keep on screen
+                if (tooltipX + 280 > window.innerWidth) {
+                    tooltipX = rect.left - 290;
+                }
+                if (tooltipY + 200 > window.innerHeight) {
+                    tooltipY = window.innerHeight - 210;
+                }
+
+                tooltip.style.left = tooltipX + 'px';
+                tooltip.style.top = tooltipY + 'px';
+                tooltip.style.display = 'block';
+            });
+
+            element.addEventListener('mouseleave', () => {
+                tooltip.style.display = 'none';
+            });
+        }
+
+        function renderShop() {
+            // Input shop
+            const inputShop = document.getElementById('input-shop');
+            inputShop.innerHTML = '';
+
+            // Helper to check if prerequisite is met for inputs
+            const hasInputPrereq = (item) => {
+                if (!item.requires) return true;
+                return GameState.unlockedInputs.includes(item.requires);
+            };
+
+            for (const item of ShopItems.inputs) {
+                const owned = GameState.unlockedInputs.includes(item.id);
+                const canAfford = GameState.currency >= item.cost;
+                const hasPrereq = hasInputPrereq(item);
+
+                const div = document.createElement('div');
+                div.className = `shop-item ${owned ? 'purchased' : ''} ${(!canAfford || !hasPrereq) && !owned ? 'locked' : ''}`;
+                div.innerHTML = `
+                    <span class="item-name">${item.name}</span>
+                    <span class="${owned ? 'item-owned' : 'item-cost'}">${owned ? 'OWNED' : !hasPrereq ? '🔒' : item.cost}</span>
+                `;
+
+                if (!owned && canAfford && hasPrereq) {
+                    div.onclick = () => purchaseInput(item);
+                }
+
+                addShopTooltip(div, item.id);
+                inputShop.appendChild(div);
+            }
+
+            // Size shop
+            const sizeShop = document.getElementById('size-shop');
+            sizeShop.innerHTML = '';
+
+            const neuronCount = GameState.hiddenLayers[0];
+            const layerCount = GameState.hiddenLayers.length;
+
+            // Add neuron
+            const neuronItem = ShopItems.size[0];
+            const neuronCost = getNeuronCost();
+            const canAddNeuron = neuronCount < 8 && GameState.currency >= neuronCost;
+            const neuronDiv = document.createElement('div');
+            neuronDiv.className = `shop-item ${!canAddNeuron ? 'locked' : ''}`;
+            neuronDiv.innerHTML = `
+                <span class="item-name">${neuronItem.name} (${neuronCount}/8)</span>
+                <span class="item-cost">${neuronCost}</span>
+            `;
+            if (canAddNeuron) {
+                neuronDiv.onclick = () => purchaseNeuron();
+            }
+            addShopTooltip(neuronDiv, 'addNeuron');
+            sizeShop.appendChild(neuronDiv);
+
+            // Add layer
+            const layerItem = ShopItems.size[1];
+            const canAddLayer = layerCount < 3 && GameState.currency >= layerItem.cost;
+            const layerDiv = document.createElement('div');
+            layerDiv.className = `shop-item ${!canAddLayer ? 'locked' : ''}`;
+            layerDiv.innerHTML = `
+                <span class="item-name">${layerItem.name} (${layerCount}/3)</span>
+                <span class="item-cost">${layerItem.cost}</span>
+            `;
+            if (canAddLayer) {
+                layerDiv.onclick = () => purchaseLayer();
+            }
+            addShopTooltip(layerDiv, 'addLayer');
+            sizeShop.appendChild(layerDiv);
+
+            // Function shop
+            const funcShop = document.getElementById('function-shop');
+            funcShop.innerHTML = '';
+
+            // Helper to check if prerequisite is met for functions
+            const hasFuncPrereq = (item) => {
+                if (!item.requires) return true;
+                return GameState.unlockedFunctions.includes(item.requires);
+            };
+
+            for (const item of ShopItems.functions) {
+                const owned = GameState.unlockedFunctions.includes(item.id);
+                const canAfford = GameState.currency >= item.cost;
+                const hasPrereq = hasFuncPrereq(item);
+
+                const div = document.createElement('div');
+                div.className = `shop-item ${owned ? 'purchased' : ''} ${(!canAfford || !hasPrereq) && !owned ? 'locked' : ''}`;
+                div.innerHTML = `
+                    <span class="item-name">${item.name}</span>
+                    <span class="${owned ? 'item-owned' : 'item-cost'}">${owned ? 'OWNED' : !hasPrereq ? '🔒' : item.cost}</span>
+                `;
+
+                if (!owned && canAfford && hasPrereq) {
+                    div.onclick = () => purchaseFunction(item);
+                }
+
+                addShopTooltip(div, item.id);
+                funcShop.appendChild(div);
+            }
+
+            // Outputs shop
+            const trainShop = document.getElementById('training-shop');
+            trainShop.innerHTML = '';
+
+            for (const item of ShopItems.training) {
+                const owned = item.id === 'aiMode' ? GameState.hasAIMode :
+                              item.id === 'shieldOutput' ? GameState.hasShieldOutput : false;
+                const canAfford = GameState.currency >= item.cost;
+                const hasPrereq = !item.requires ||
+                    (item.requires === 'aiMode' && GameState.hasAIMode);
+
+                const div = document.createElement('div');
+                div.className = `shop-item ${owned ? 'purchased' : ''} ${(!canAfford || !hasPrereq) && !owned ? 'locked' : ''}`;
+                div.innerHTML = `
+                    <span class="item-name">${item.name}</span>
+                    <span class="${owned ? 'item-owned' : 'item-cost'}">${owned ? 'OWNED' : !hasPrereq ? '🔒' : item.cost}</span>
+                `;
+
+                if (!owned && canAfford && hasPrereq) {
+                    div.onclick = () => purchaseTraining(item);
+                }
+
+                addShopTooltip(div, item.id);
+                trainShop.appendChild(div);
+            }
+
+            // Update activation selector (hide if only one function)
+            const activationSection = document.getElementById('activation-selector-section');
+            const select = document.getElementById('activation-select');
+
+            if (GameState.unlockedFunctions.length <= 1) {
+                activationSection.style.display = 'none';
+            } else {
+                activationSection.style.display = 'flex';
+                select.innerHTML = '';
+                for (const func of GameState.unlockedFunctions) {
+                    const option = document.createElement('option');
+                    option.value = func;
+                    option.textContent = func.charAt(0).toUpperCase() + func.slice(1);
+                    if (func === GameState.selectedActivation) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                }
+            }
+        }
+
+        function purchaseInput(item) {
+            if (GameState.currency >= item.cost && !GameState.unlockedInputs.includes(item.id)) {
+                GameState.currency -= item.cost;
+                GameState.unlockedInputs.push(item.id);
+                neuralNetwork.rebuild();
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function getNeuronCost() {
+            // Neuron costs: 10 for 2nd, 100 for 3rd, 500 for 4th, then +100 for each additional
+            const currentNeurons = GameState.hiddenLayers[0];
+            if (currentNeurons === 1) return 10;   // 2nd neuron
+            if (currentNeurons === 2) return 100;  // 3rd neuron
+            if (currentNeurons === 3) return 500;  // 4th neuron
+            return 500 + (currentNeurons - 3) * 100;  // 5th+ neurons (600, 700, 800...)
+        }
+
+        function purchaseNeuron() {
+            const cost = getNeuronCost();
+            if (GameState.currency >= cost && GameState.hiddenLayers[0] < 8) {
+                GameState.currency -= cost;
+                GameState.hiddenLayers[0]++;
+                neuralNetwork.rebuild();
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function purchaseLayer() {
+            const cost = ShopItems.size[1].cost;
+            if (GameState.currency >= cost && GameState.hiddenLayers.length < 3) {
+                GameState.currency -= cost;
+                GameState.hiddenLayers.push(2);
+                neuralNetwork.rebuild();
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function purchaseFunction(item) {
+            if (GameState.currency >= item.cost && !GameState.unlockedFunctions.includes(item.id)) {
+                GameState.currency -= item.cost;
+                GameState.unlockedFunctions.push(item.id);
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function purchaseTraining(item) {
+            if (GameState.currency >= item.cost) {
+                GameState.currency -= item.cost;
+                if (item.id === 'aiMode') {
+                    GameState.hasAIMode = true;
+                } else if (item.id === 'shieldOutput') {
+                    GameState.hasShieldOutput = true;
+                    neuralNetwork.rebuild(); // Rebuild to add second output
+                }
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function purchaseSpeed(item) {
+            if (GameState.currency >= item.cost && !GameState.unlockedSpeeds.includes(item.id)) {
+                GameState.currency -= item.cost;
+                GameState.unlockedSpeeds.push(item.id);
+                updateUI();
+                updateSpeedSelector();
+                saveGame();
+            }
+        }
+
+        // ============================================
+        // UI MANAGEMENT
+        // ============================================
+        let game;
+        let animationId;
+        let ffTargetScore = null; // Fast-forward target score
+
+        function updateSpeedSelector() {
+            const select = document.getElementById('game-speed');
+            const currentValue = parseFloat(select.value);
+            select.innerHTML = '';
+
+            // Sort speeds and add only unlocked ones
+            const sortedSpeeds = [...GameState.unlockedSpeeds].sort((a, b) => a - b);
+            for (const speed of sortedSpeeds) {
+                const option = document.createElement('option');
+                option.value = speed;
+                option.textContent = speed + 'x';
+                if (speed === currentValue || (sortedSpeeds.length === 1)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            }
+
+            // If current speed is no longer available, reset to 1x
+            if (!sortedSpeeds.includes(currentValue)) {
+                select.value = '1';
+                GameState.gameSpeed = 1;
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('currency-display').textContent = GameState.currency;
+            document.getElementById('highscore-display').textContent = GameState.highScore;
+            renderShop();
+            renderTestInputs();
+            runTestInputs();
+
+            // Update AI play button state
+            const aiBtn = document.getElementById('ai-play-btn');
+            if (GameState.hasAIMode) {
+                aiBtn.classList.remove('locked');
+                aiBtn.textContent = 'PLAY WITH AI';
+                aiBtn.title = 'Let your neural network play automatically';
+                aiBtn.onclick = () => startGame(true);
+            } else {
+                aiBtn.classList.add('locked');
+                aiBtn.textContent = 'PLAY WITH AI 🔒';
+                aiBtn.title = "Purchase 'AI Play Mode' in the Outputs shop to unlock";
+                aiBtn.onclick = null;
+            }
+        }
+
+        // Test input values storage
+        const testInputValues = {};
+
+        function renderTestInputs() {
+            const container = document.getElementById('test-input-sliders');
+            container.innerHTML = '';
+
+            for (const inputId of GameState.unlockedInputs) {
+                const item = ShopItems.inputs.find(i => i.id === inputId);
+                const label = item ? item.name.substring(0, 10) : inputId;
+
+                // Constant is always 1, not adjustable
+                if (inputId === 'constant1') {
+                    testInputValues[inputId] = 1.0;
+                    const row = document.createElement('div');
+                    row.className = 'test-input-row';
+                    row.innerHTML = `
+                        <label>${label}</label>
+                        <span style="flex: 1; text-align: center; color: #888;">always</span>
+                        <span class="test-value" id="test-val-${inputId}" style="color: #4CAF50;">1.00</span>
+                    `;
+                    container.appendChild(row);
+                    continue;
+                }
+
+                // Initialize test value if not set
+                if (testInputValues[inputId] === undefined) {
+                    testInputValues[inputId] = 0;
+                }
+
+                const row = document.createElement('div');
+                row.className = 'test-input-row';
+                row.innerHTML = `
+                    <label>${label}</label>
+                    <input type="range" min="-100" max="100" value="${testInputValues[inputId] * 100}"
+                           data-input-id="${inputId}"
+                           oninput="updateTestInput('${inputId}', this.value)">
+                    <span class="test-value" id="test-val-${inputId}">${testInputValues[inputId].toFixed(2)}</span>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function updateTestInput(inputId, sliderValue) {
+            const value = sliderValue / 100;
+            testInputValues[inputId] = value;
+            document.getElementById(`test-val-${inputId}`).textContent = value.toFixed(2);
+            runTestInputs();
+        }
+
+        function runTestInputs() {
+            // Build input array from test values
+            const inputs = GameState.unlockedInputs.map(id => testInputValues[id] || 0);
+
+            // Run forward propagation
+            const output = neuralNetwork.forward(inputs);
+
+            // Update output display
+            const outputEl = document.getElementById('test-output-value');
+            outputEl.textContent = output.toFixed(3);
+            outputEl.className = 'output-value ' + (output > getFlapThreshold() ? 'flap' : 'no-flap');
+
+            // Update network visualization to show activations with numbers
+            drawNetwork(document.getElementById('network-canvas'), false, true);
+        }
+
+        function resetTestInputs() {
+            for (const inputId of GameState.unlockedInputs) {
+                // Constant always stays at 1
+                testInputValues[inputId] = (inputId === 'constant1') ? 1.0 : 0;
+            }
+            renderTestInputs();
+            runTestInputs();
+        }
+
+        function showUpgradePhase() {
+            GameState.phase = 'upgrade';
+            document.getElementById('upgrade-phase').style.display = 'flex';
+            document.getElementById('play-phase').style.display = 'none';
+            updateUI();
+        }
+
+        function showPlayPhase() {
+            GameState.phase = 'play';
+            document.getElementById('upgrade-phase').style.display = 'none';
+            document.getElementById('play-phase').style.display = 'block';
+            document.getElementById('game-overlay').classList.add('hidden');
+            updateFFButtons();
+        }
+
+        function showGameOver(isWin = false) {
+            document.getElementById('game-overlay').classList.remove('hidden');
+            if (isWin) {
+                document.getElementById('overlay-title').textContent = '🎉 YOU WIN! 🎉';
+                document.getElementById('overlay-title').style.color = '#ffd700';
+            } else {
+                document.getElementById('overlay-title').textContent = 'GAME OVER';
+                document.getElementById('overlay-title').style.color = '#4ecca3';
+            }
+            document.getElementById('overlay-score').textContent = `Score: ${GameState.currentScore}`;
+            const earned = GameState.lastEarned || 0;
+            if (isWin) {
+                document.getElementById('overlay-earned').textContent = `Congratulations! +${earned} currency earned!`;
+            } else if (earned > 0) {
+                document.getElementById('overlay-earned').textContent = `+${earned} new currency earned!`;
+            } else {
+                document.getElementById('overlay-earned').textContent = `Beat your high score (${GameState.highScore}) to earn more!`;
+            }
+        }
+
+        function startGame(aiMode) {
+            GameState.isAIMode = aiMode;
+            showPlayPhase();
+
+            const canvas = document.getElementById('game-canvas');
+            game = new Game(canvas);
+            game.start();
+
+            gameLoop();
+        }
+
+        let frameAccumulator = 0;
+
+        function gameLoop() {
+            const speed = parseFloat(document.getElementById('game-speed').value);
+
+            // Check if we've reached FF target
+            if (ffTargetScore !== null && game.score >= ffTargetScore) {
+                // Reached target - slow down
+                document.getElementById('game-speed').value = '0.5';
+                document.getElementById('ff-overlay').classList.add('hidden');
+                document.querySelectorAll('.ff-btn').forEach(btn => btn.classList.remove('active'));
+                ffTargetScore = null;
+            }
+
+            // Update FF overlay message
+            if (ffTargetScore !== null) {
+                const remaining = ffTargetScore - game.score;
+                document.getElementById('ff-message').textContent = `Fast-forwarding... ${remaining} pipes to go`;
+            }
+
+            if (speed >= 1) {
+                // Fast forward: run multiple updates per frame
+                for (let i = 0; i < speed; i++) {
+                    game.update();
+                    if (game.gameOver) break;
+                    // Check target during fast-forward
+                    if (ffTargetScore !== null && game.score >= ffTargetScore) {
+                        document.getElementById('game-speed').value = '0.5';
+                        document.getElementById('ff-overlay').classList.add('hidden');
+                        document.querySelectorAll('.ff-btn').forEach(btn => btn.classList.remove('active'));
+                        ffTargetScore = null;
+                        break;
+                    }
+                }
+            } else {
+                // Slow motion: only update on some frames
+                frameAccumulator += speed;
+                if (frameAccumulator >= 1) {
+                    frameAccumulator -= 1;
+                    game.update();
+                }
+            }
+
+            game.draw();
+
+            // Update mini network display if visible
+            const nnOverlay = document.getElementById('nn-overlay');
+            if (!nnOverlay.classList.contains('hidden')) {
+                drawNetwork(document.getElementById('mini-network-canvas'), true, true);
+            }
+
+            if (!game.gameOver) {
+                animationId = requestAnimationFrame(gameLoop);
+            } else {
+                // Game over - clear FF state
+                if (ffTargetScore !== null) {
+                    document.getElementById('ff-overlay').classList.add('hidden');
+                    document.querySelectorAll('.ff-btn').forEach(btn => btn.classList.remove('active'));
+                    ffTargetScore = null;
+                }
+            }
+        }
+
+        function startFastForward(targetScore) {
+            if (!game || game.gameOver) return;
+            if (game.score >= targetScore) return; // Already past target
+
+            ffTargetScore = targetScore;
+            document.getElementById('game-speed').value = '10';
+            document.getElementById('ff-overlay').classList.remove('hidden');
+
+            // Highlight active button
+            document.querySelectorAll('.ff-btn').forEach(btn => {
+                if (parseInt(btn.dataset.target) === targetScore) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function cancelFastForward() {
+            ffTargetScore = null;
+            document.getElementById('ff-overlay').classList.add('hidden');
+            document.querySelectorAll('.ff-btn').forEach(btn => btn.classList.remove('active'));
+        }
+
+        function updateFFButtons() {
+            // Show FF buttons only for scores the player has already reached
+            document.querySelectorAll('.ff-btn').forEach(btn => {
+                const target = parseInt(btn.dataset.target);
+                if (GameState.highScore >= target) {
+                    btn.classList.remove('locked');
+                } else {
+                    btn.classList.add('locked');
+                }
+            });
+        }
+
+        function returnToUpgrade() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            showUpgradePhase();
+        }
+
+        function restartGame() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            document.getElementById('game-overlay').classList.add('hidden');
+            game.start();
+            gameLoop();
+        }
+
+        function abortGame() {
+            if (game && game.isRunning) {
+                game.score = 0; // No points earned
+                game.endGame();
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && GameState.phase === 'play' && !GameState.isAIMode) {
+                e.preventDefault();
+                if (game && game.isRunning) {
+                    if (game.waitingForStart) {
+                        game.waitingForStart = false;
+                        game.spawnPipe(); // Spawn first pipe when starting
+                    }
+                    game.bird.flap();
+                }
+            }
+            // S key for shield in manual mode
+            if (e.code === 'KeyS' && GameState.phase === 'play' && !GameState.isAIMode) {
+                e.preventDefault();
+                if (game && game.isRunning && game.score >= 100) {
+                    game.activateShield();
+                }
+            }
+        });
+
+        // Click to flap in manual mode
+        document.getElementById('game-canvas').addEventListener('click', (e) => {
+            if (GameState.phase === 'play' && !GameState.isAIMode) {
+                if (game && game.isRunning) {
+                    if (game.waitingForStart) {
+                        game.waitingForStart = false;
+                        game.spawnPipe();
+                    }
+                    game.bird.flap();
+                }
+            }
+        });
+
+        // NN overlay toggle
+        document.getElementById('nn-toggle-btn').addEventListener('click', () => {
+            const overlay = document.getElementById('nn-overlay');
+            const btn = document.getElementById('nn-toggle-btn');
+
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                btn.textContent = 'Hide NN';
+            } else {
+                overlay.classList.add('hidden');
+                btn.textContent = 'Show NN';
+            }
+        });
+
+        // Fast-forward buttons
+        document.querySelectorAll('.ff-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = parseInt(btn.dataset.target);
+                if (ffTargetScore === target) {
+                    // Clicking active button cancels FF
+                    cancelFastForward();
+                    document.getElementById('game-speed').value = '1';
+                } else {
+                    startFastForward(target);
+                }
+            });
+        });
+
+        // Activation function change
+        document.getElementById('activation-select').addEventListener('change', (e) => {
+            GameState.selectedActivation = e.target.value;
+            saveGame();
+        });
+
+        // Network canvas click for weight editing
+        let selectedWeight = null;
+
+        document.getElementById('network-canvas').addEventListener('click', (e) => {
+            const canvas = e.target;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (!canvas.nodePositions) return;
+
+            const nodeRadius = 15;
+
+            // First, check if click is on a node - if so, ignore (don't open weight editor)
+            for (let i = 0; i < canvas.nodePositions.length; i++) {
+                for (let j = 0; j < canvas.nodePositions[i].length; j++) {
+                    const node = canvas.nodePositions[i][j];
+                    const distToNode = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
+                    if (distToNode < nodeRadius + 5) {
+                        // Clicked on a node - don't open weight editor
+                        return;
+                    }
+                }
+            }
+
+            // Check if click is near a connection (but not on a node)
+            for (let i = 0; i < canvas.nodePositions.length - 1; i++) {
+                for (let j = 0; j < canvas.nodePositions[i + 1].length; j++) {
+                    for (let k = 0; k < canvas.nodePositions[i].length; k++) {
+                        const start = canvas.nodePositions[i][k];
+                        const end = canvas.nodePositions[i + 1][j];
+
+                        // Check if click is near line
+                        const dist = pointToLineDistance(x, y, start.x, start.y, end.x, end.y);
+                        if (dist < 10) {
+                            openWeightEditor(i, j, k);
+                            return;
+                        }
+                    }
+                }
+            }
+        });
+
+        // Tooltip functionality
+        const networkCanvas = document.getElementById('network-canvas');
+        const tooltip = document.getElementById('network-tooltip');
+
+        networkCanvas.addEventListener('mousemove', (e) => {
+            const canvas = e.target;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const activationChart = document.getElementById('activation-chart');
+
+            if (!canvas.nodePositions) {
+                tooltip.style.display = 'none';
+                return;
+            }
+
+            const nodeRadius = 15;
+            let foundTooltip = null;
+            let showActivationChart = false;
+            let hoveredLayerIdx = -1;
+            let hoveredNeuronIdx = -1;
+
+            // Check if hovering over a node
+            for (let i = 0; i < canvas.nodePositions.length; i++) {
+                for (let j = 0; j < canvas.nodePositions[i].length; j++) {
+                    const node = canvas.nodePositions[i][j];
+                    const dist = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
+
+                    if (dist < nodeRadius + 5) {
+                        hoveredLayerIdx = i;
+                        hoveredNeuronIdx = j;
+                        // Determine which type of node this is
+                        if (i === 0) {
+                            // Input node
+                            const inputId = GameState.unlockedInputs[j];
+                            const tooltipData = InputTooltips[inputId];
+                            foundTooltip = tooltipData || { title: 'Input', desc: 'Input node', range: '', tip: '' };
+                        } else if (i === canvas.nodePositions.length - 1) {
+                            // Output node
+                            foundTooltip = getOutputTooltip(j);
+                            showActivationChart = true;
+                        } else {
+                            // Hidden node
+                            foundTooltip = HiddenTooltip;
+                            showActivationChart = true;
+                        }
+                        break;
+                    }
+                }
+                if (hoveredLayerIdx >= 0) break;
+            }
+
+            // Check if hovering over a connection (only if not hovering over a node)
+            let newHoveredConnection = null;
+            let isOverNode = hoveredLayerIdx >= 0;
+
+            if (!isOverNode) {
+                for (let i = 0; i < canvas.nodePositions.length - 1; i++) {
+                    for (let j = 0; j < canvas.nodePositions[i + 1].length; j++) {
+                        for (let k = 0; k < canvas.nodePositions[i].length; k++) {
+                            const start = canvas.nodePositions[i][k];
+                            const end = canvas.nodePositions[i + 1][j];
+                            const dist = pointToLineDistance(x, y, start.x, start.y, end.x, end.y);
+
+                            if (dist < 8) {
+                                foundTooltip = ConnectionTooltip;
+                                newHoveredConnection = { layer: i, from: k, to: j };
+                                break;
+                            }
+                        }
+                        if (newHoveredConnection) break;
+                    }
+                    if (newHoveredConnection) break;
+                }
+            }
+
+            // Update hover state and redraw if changed (but not when over a node)
+            const hoverChanged = JSON.stringify(hoveredConnection) !== JSON.stringify(newHoveredConnection);
+            if (hoverChanged && !isOverNode) {
+                hoveredConnection = newHoveredConnection;
+                drawNetwork(canvas, false, true);
+            } else if (isOverNode && hoveredConnection) {
+                // Clear connection highlight when moving to a node
+                hoveredConnection = null;
+                drawNetwork(canvas, false, true);
+            }
+
+            // Update cursor based on what we're hovering over
+            if (newHoveredConnection) {
+                canvas.style.cursor = 'pointer';
+            } else if (isOverNode) {
+                canvas.style.cursor = 'help';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+
+            if (foundTooltip) {
+                tooltip.querySelector('.tooltip-title').textContent = foundTooltip.title;
+                tooltip.querySelector('.tooltip-desc').textContent = foundTooltip.desc;
+                tooltip.querySelector('.tooltip-range').textContent = foundTooltip.range;
+                tooltip.querySelector('.tooltip-tip').textContent = foundTooltip.tip;
+
+                // Show activation chart for hidden and output neurons
+                if (showActivationChart && hoveredLayerIdx > 0 && neuralNetwork.preActivations.length > hoveredLayerIdx) {
+                    const preActivationValue = neuralNetwork.preActivations[hoveredLayerIdx][hoveredNeuronIdx];
+                    const isOutputNode = hoveredLayerIdx === canvas.nodePositions.length - 1;
+                    if (preActivationValue !== undefined) {
+                        activationChart.style.display = 'block';
+                        drawActivationChart(preActivationValue, isOutputNode);
+                    } else {
+                        activationChart.style.display = 'none';
+                    }
+                } else {
+                    activationChart.style.display = 'none';
+                }
+
+                // Position tooltip near cursor but within viewport
+                let tooltipX = e.clientX + 15;
+                let tooltipY = e.clientY + 15;
+
+                // Prevent tooltip from going off-screen
+                const tooltipRect = tooltip.getBoundingClientRect();
+                if (tooltipX + 280 > window.innerWidth) {
+                    tooltipX = e.clientX - 295;
+                }
+                if (tooltipY + 200 > window.innerHeight) {
+                    tooltipY = e.clientY - 200;
+                }
+
+                tooltip.style.left = tooltipX + 'px';
+                tooltip.style.top = tooltipY + 'px';
+                tooltip.style.display = 'block';
+            } else {
+                tooltip.style.display = 'none';
+                activationChart.style.display = 'none';
+            }
+        });
+
+        networkCanvas.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+            document.getElementById('activation-chart').style.display = 'none';
+            networkCanvas.style.cursor = 'default';
+            if (hoveredConnection) {
+                hoveredConnection = null;
+                drawNetwork(networkCanvas, false, true);
+            }
+        });
+
+        function pointToLineDistance(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function openWeightEditor(layerIdx, neuronIdx, weightIdx) {
+            selectedWeight = { layerIdx, neuronIdx, weightIdx };
+            const weight = neuralNetwork.weights[layerIdx][neuronIdx][weightIdx];
+
+            // Determine source node name
+            let fromName;
+            if (layerIdx === 0) {
+                // Source is an input
+                const inputId = GameState.unlockedInputs[weightIdx];
+                const item = ShopItems.inputs.find(i => i.id === inputId);
+                fromName = item ? item.name : inputId;
+            } else {
+                // Source is a hidden neuron
+                fromName = `Hidden ${layerIdx}-${weightIdx + 1}`;
+            }
+
+            // Determine destination node name
+            let toName;
+            const totalWeightLayers = neuralNetwork.weights.length;
+            if (layerIdx === totalWeightLayers - 1) {
+                // Destination is the output
+                toName = neuronIdx === 0 ? 'Output (FLAP?)' : 'Output (SHIELD?)';
+            } else {
+                // Destination is a hidden neuron
+                toName = `Hidden ${layerIdx + 1}-${neuronIdx + 1}`;
+            }
+
+            // Update the connection info display
+            const infoDiv = document.getElementById('weight-connection-info');
+            infoDiv.querySelector('.connection-from').textContent = fromName;
+            infoDiv.querySelector('.connection-to').textContent = toName;
+
+            document.getElementById('weight-slider').value = Math.round(weight * 50);
+            document.getElementById('weight-value').textContent = weight.toFixed(2);
+            document.getElementById('weight-editor').style.display = 'block';
+        }
+
+        document.getElementById('weight-slider').addEventListener('input', (e) => {
+            document.getElementById('weight-value').textContent = (e.target.value / 50).toFixed(2);
+        });
+
+        function setQuickWeight(value) {
+            document.getElementById('weight-slider').value = value * 50;
+            document.getElementById('weight-value').textContent = value.toFixed(2);
+        }
+
+        function saveWeight() {
+            if (selectedWeight) {
+                const value = parseFloat(document.getElementById('weight-slider').value) / 50;
+                neuralNetwork.setWeight(
+                    selectedWeight.layerIdx,
+                    selectedWeight.neuronIdx,
+                    selectedWeight.weightIdx,
+                    value
+                );
+                drawNetwork(document.getElementById('network-canvas'));
+                saveGame();
+            }
+            closeWeightEditor();
+        }
+
+        function closeWeightEditor() {
+            document.getElementById('weight-editor').style.display = 'none';
+            selectedWeight = null;
+        }
+
+        // ============================================
+        // SAVE/LOAD
+        // ============================================
+        function saveGame() {
+            const saveData = {
+                currency: GameState.currency,
+                highScore: GameState.highScore,
+                unlockedSpeeds: GameState.unlockedSpeeds,
+                unlockedInputs: GameState.unlockedInputs,
+                unlockedFunctions: GameState.unlockedFunctions,
+                hasAIMode: GameState.hasAIMode,
+                hasShieldOutput: GameState.hasShieldOutput,
+                hasBackprop: GameState.hasBackprop,
+                hasImprovedLearning: GameState.hasImprovedLearning,
+                hiddenLayers: GameState.hiddenLayers,
+                selectedActivation: GameState.selectedActivation,
+                weights: neuralNetwork.weights,
+                biases: neuralNetwork.biases
+            };
+
+            localStorage.setItem('neuralFlappyBird', JSON.stringify(saveData));
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('neuralFlappyBird');
+            if (saved) {
+                const data = JSON.parse(saved);
+
+                GameState.currency = data.currency || 0;
+                GameState.highScore = data.highScore || 0;
+                GameState.unlockedSpeeds = [0.1, 0.5, 1, 2, 4, 8, 10]; // All speeds always available
+                GameState.unlockedInputs = data.unlockedInputs || ['constant1'];
+                GameState.unlockedFunctions = data.unlockedFunctions || ['step'];
+                GameState.hasAIMode = data.hasAIMode || false;
+                GameState.hasShieldOutput = data.hasShieldOutput || false;
+                GameState.hasBackprop = data.hasBackprop || false;
+                GameState.hasImprovedLearning = data.hasImprovedLearning || false;
+                GameState.hiddenLayers = data.hiddenLayers || [1];
+                GameState.selectedActivation = data.selectedActivation || 'step';
+
+                neuralNetwork.rebuild();
+
+                if (data.weights && data.biases) {
+                    neuralNetwork.weights = data.weights;
+                    neuralNetwork.biases = data.biases;
+                }
+
+                updateFFButtons();
+            }
+        }
+
+        // ============================================
+        // RESTART GAME
+        // ============================================
+        function confirmRestart() {
+            if (confirm('Are you sure you want to restart? All progress will be lost!')) {
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            // Clear saved data
+            localStorage.removeItem('neuralFlappyBird');
+
+            // Reset GameState to defaults
+            GameState.currency = 0;
+            GameState.highScore = 0;
+            GameState.currentScore = 0;
+            GameState.unlockedSpeeds = [0.1, 0.5, 1, 2, 4, 8, 10];
+            GameState.unlockedInputs = ['constant1'];
+            GameState.unlockedFunctions = ['step'];
+            GameState.hasAIMode = false;
+            GameState.hasShieldOutput = false;
+            GameState.hasBackprop = false;
+            GameState.hasImprovedLearning = false;
+            GameState.hiddenLayers = [1];
+            GameState.selectedActivation = 'step';
+            GameState.lastScore = 0;
+            GameState.lastEarned = 0;
+
+            // Rebuild network with defaults
+            neuralNetwork.rebuild();
+
+            // Update UI
+            updateSpeedSelector();
+            showUpgradePhase();
+            updateStats();
+        }
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        function init() {
+            loadGame();
+            updateSpeedSelector();
+            showUpgradePhase();
+            updateStats();
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -99,6 +99,132 @@
             overflow-y: auto;
         }
 
+        #tutorial-panel {
+            width: 220px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        #tutorial-panel h3 {
+            color: #ffd700;
+            font-size: 14px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ffd700;
+        }
+
+        .tutorial-step {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #666;
+            transition: all 0.3s;
+        }
+
+        .tutorial-step.active {
+            background: rgba(78, 204, 163, 0.15);
+            border-left-color: #4ecca3;
+        }
+
+        .tutorial-step.completed {
+            background: rgba(255, 215, 0, 0.1);
+            border-left-color: #ffd700;
+            opacity: 0.7;
+        }
+
+        .tutorial-step-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #4ecca3;
+            margin-bottom: 6px;
+        }
+
+        .tutorial-step.active .tutorial-step-title {
+            color: #4ecca3;
+        }
+
+        .tutorial-step.completed .tutorial-step-title {
+            color: #ffd700;
+        }
+
+        .tutorial-step-desc {
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .tutorial-step.active .tutorial-step-desc {
+            color: #ddd;
+        }
+
+        .tutorial-step-hint {
+            font-size: 11px;
+            color: #888;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-style: italic;
+        }
+
+        .tutorial-step.active .tutorial-step-hint {
+            color: #ffd700;
+        }
+
+        .tutorial-subhints {
+            margin-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 8px;
+        }
+
+        .tutorial-subhint-toggle {
+            font-size: 11px;
+            color: #4ecca3;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+
+        .tutorial-subhint-toggle:hover {
+            color: #6fe8c0;
+        }
+
+        .tutorial-subhint-toggle .arrow {
+            transition: transform 0.2s;
+            font-size: 8px;
+        }
+
+        .tutorial-subhint-toggle.expanded .arrow {
+            transform: rotate(90deg);
+        }
+
+        .tutorial-subhint {
+            display: none;
+            font-size: 11px;
+            color: #999;
+            line-height: 1.5;
+            padding: 8px;
+            margin-bottom: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            border-left: 2px solid #4ecca3;
+        }
+
+        .tutorial-subhint.visible {
+            display: block;
+        }
+
+        .tutorial-subhint-number {
+            color: #4ecca3;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
         .shop-section {
             margin-bottom: 20px;
         }
@@ -156,6 +282,46 @@
             background: rgba(0, 0, 0, 0.4);
             border-radius: 10px;
             padding: 15px;
+            position: relative;
+        }
+
+        #network-locked-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #network-locked-overlay.hidden {
+            display: none;
+        }
+
+        #network-locked-overlay .lock-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        #network-locked-overlay .lock-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4ecca3;
+            margin-bottom: 10px;
+        }
+
+        #network-locked-overlay .lock-desc {
+            font-size: 14px;
+            color: #aaa;
+            text-align: center;
+            max-width: 300px;
+            line-height: 1.5;
         }
 
         .panel-header {
@@ -196,18 +362,12 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        #play-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            justify-content: center;
-        }
-
         .play-btn {
-            padding: 15px 30px;
-            font-size: 16px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: bold;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -671,6 +831,7 @@
                     <div class="score-value" id="highscore-display">0</div>
                 </div>
             </div>
+            <button class="play-btn manual" id="play-btn" onclick="startGame(false)">PLAY MANUAL</button>
             <button id="restart-btn" onclick="confirmRestart()">Restart Game</button>
         </div>
 
@@ -697,6 +858,11 @@
                 </div>
 
                 <div id="network-panel">
+                    <div id="network-locked-overlay">
+                        <div class="lock-icon">🔒</div>
+                        <div class="lock-title">Network Locked</div>
+                        <div class="lock-desc">Purchase "AI Play Mode" from the Outputs shop to configure your neural network</div>
+                    </div>
                     <div class="panel-header">
                         <h3>NETWORK CONFIGURATION</h3>
                     </div>
@@ -718,9 +884,12 @@
                             <span class="output-value" id="test-output-value">0.00</span>
                         </div>
                     </div>
-                    <div id="play-buttons">
-                        <button class="play-btn manual" onclick="startGame(false)">PLAY MANUAL</button>
-                        <button class="play-btn ai" id="ai-play-btn" onclick="startGame(true)" title="Purchase 'AI Play Mode' in the Outputs shop to unlock">PLAY WITH AI 🔒</button>
+                </div>
+
+                <div id="tutorial-panel">
+                    <h3>CURRENT GOAL</h3>
+                    <div id="tutorial-steps">
+                        <!-- Steps populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -810,7 +979,7 @@
 
             // Unlocked features
             unlockedSpeeds: [0.1, 0.5, 1, 2, 4, 8, 10], // All speeds available by default
-            unlockedInputs: ['constant1'],
+            unlockedInputs: ['constant1', 'birdVel'], // Velocity unlocked by default
             unlockedFunctions: ['step'],
             hasAIMode: false,
             hasShieldOutput: false,
@@ -833,9 +1002,9 @@
         // ============================================
         const ShopItems = {
             inputs: [
-                // Phase 1 inputs (score 0-50)
+                // Default inputs (unlocked from start)
                 { id: 'constant1', name: 'Constant 1', cost: 0, desc: 'Always outputs 1.0' },
-                { id: 'birdVel', name: 'Bird Velocity', cost: 3, desc: 'Current velocity', requires: 'constant1' },
+                { id: 'birdVel', name: 'Bird Velocity', cost: 0, desc: 'Current velocity' },
                 // Phase 2 inputs (score 50-200) - need pipe gap Y for sine wave
                 { id: 'pipeY', name: 'Next Pipe Gap Y', cost: 15, desc: 'Center of next pipe gap - essential for Phase 2!', requires: 'birdVel' },
                 { id: 'birdY', name: 'Bird Y Position', cost: 20, desc: 'Vertical position of bird', requires: 'pipeY' },
@@ -2472,21 +2641,177 @@
             document.getElementById('currency-display').textContent = GameState.currency;
             document.getElementById('highscore-display').textContent = GameState.highScore;
             renderShop();
-            renderTestInputs();
-            runTestInputs();
+            updateTutorial();
 
-            // Update AI play button state
-            const aiBtn = document.getElementById('ai-play-btn');
+            // Update play button - switches between Manual and AI mode
+            const playBtn = document.getElementById('play-btn');
             if (GameState.hasAIMode) {
-                aiBtn.classList.remove('locked');
-                aiBtn.textContent = 'PLAY WITH AI';
-                aiBtn.title = 'Let your neural network play automatically';
-                aiBtn.onclick = () => startGame(true);
+                playBtn.className = 'play-btn ai';
+                playBtn.textContent = 'PLAY WITH AI';
+                playBtn.title = 'Let your neural network play automatically';
+                playBtn.onclick = () => startGame(true);
             } else {
-                aiBtn.classList.add('locked');
-                aiBtn.textContent = 'PLAY WITH AI 🔒';
-                aiBtn.title = "Purchase 'AI Play Mode' in the Outputs shop to unlock";
-                aiBtn.onclick = null;
+                playBtn.className = 'play-btn manual';
+                playBtn.textContent = 'PLAY MANUAL';
+                playBtn.title = 'Play manually to earn currency';
+                playBtn.onclick = () => startGame(false);
+            }
+
+            // Show/hide network locked overlay based on AI mode
+            const networkOverlay = document.getElementById('network-locked-overlay');
+            if (GameState.hasAIMode) {
+                networkOverlay.classList.add('hidden');
+                renderTestInputs();
+                runTestInputs();
+            } else {
+                networkOverlay.classList.remove('hidden');
+            }
+        }
+
+        // ============================================
+        // TUTORIAL SYSTEM
+        // ============================================
+        const TutorialSteps = [
+            {
+                id: 'unlock-ai',
+                title: 'Step 1: Unlock AI Mode',
+                desc: 'Play manually to earn currency and purchase AI Play Mode from the Outputs shop.',
+                hint: 'Press SPACE or click to flap. Pass pipes to earn currency!',
+                isComplete: () => GameState.hasAIMode,
+                isActive: () => !GameState.hasAIMode
+            },
+            {
+                id: 'phase1-fly-straight',
+                title: 'Step 2: Fly Straight',
+                desc: 'Get the bird to flap at just the right downward velocity to maintain altitude. This requires very careful weight tuning.',
+                hint: 'You have Constant and Bird Velocity inputs. Adjust the velocity weight so the bird flaps when falling too fast.',
+                subHints: [
+                    'You can adjust the multipliers on each of the lines, which then add up to either trigger or not trigger the node. Simulate this with the Test Inputs below.',
+                    'During the game the bird\'s velocity will increase as it falls, so you want to adjust the connection weights so the bird flaps as its velocity gets too high - but not when it\'s low or negative.',
+                    'If you leave the other two connections at +1, you can adjust the Constant connection to get the flap to trigger at different velocity values.',
+                    'Try a Constant weight around -0.7 so the bird flaps at a velocity of 0.7 (when it overcomes the negative constant).'
+                ],
+                isComplete: () => GameState.highScore >= 50,
+                isActive: () => GameState.hasAIMode && GameState.highScore < 50
+            },
+            {
+                id: 'phase2-follow-pipes',
+                title: 'Step 3: Follow the Pipes',
+                desc: 'Get the bird to follow the center of the pipe gaps. This requires combining separate hidden neurons. Adjust your flight tuning too!',
+                hint: 'Buy Pipe Gap Y and Bird Y inputs. Use 2+ neurons: one for "too low", one for velocity. Combine them at the output.',
+                subHints: [
+                    'You want the bird to flap when it\'s falling too fast - but only if it\'s ALSO below the center of the pipes. Two conditions need to be true at once.',
+                    '"Falling too fast" and "below center of pipes" can each be represented by separate hidden neurons. Use zero-weight connections to keep the logic separate (e.g., neuron 1 only looks at velocity, neuron 2 only looks at position).',
+                    'You can do "greater than" logic by having one input be negative and the other positive. For example: Bird Y (+1) and Pipe Y (-1) will fire when bird is below the pipe gap.',
+                    'You can do AND logic between two hidden neurons by having them each contribute 0.3 to the output. They\'ll add up to 0.6 (greater than 0.5) if BOTH are active, but only 0.3 if just one is active.'
+                ],
+                isComplete: () => GameState.highScore >= 100,
+                isActive: () => GameState.hasAIMode && GameState.highScore >= 50 && GameState.highScore < 100
+            },
+            {
+                id: 'phase3-shield',
+                title: 'Step 4: Master the Shield',
+                desc: 'Fire the shield right before hitting a laser. It has a cooldown, so only fire when close. This shouldn\'t affect your flight programming.',
+                hint: 'Buy Shield Output and Laser Distance. Set the shield output to fire when laser distance is low.',
+                isComplete: () => GameState.highScore >= 200,
+                isActive: () => GameState.hasAIMode && GameState.highScore >= 100 && GameState.highScore < 200
+            },
+            {
+                id: 'victory',
+                title: 'Victory!',
+                desc: 'You\'ve mastered the neural network! Can you optimize further or try different network configurations?',
+                hint: 'Try different activation functions, more neurons, or multiple hidden layers!',
+                isComplete: () => false,
+                isActive: () => GameState.highScore >= 200
+            }
+        ];
+
+        // Track which sub-hints are revealed per step
+        const revealedSubHints = {};
+
+        function updateTutorial() {
+            const container = document.getElementById('tutorial-steps');
+            container.innerHTML = '';
+
+            // Find the active step
+            let activeStep = null;
+            for (const step of TutorialSteps) {
+                if (step.isActive()) {
+                    activeStep = step;
+                    break;
+                }
+            }
+
+            // Show completed steps first (collapsed, in order)
+            for (const step of TutorialSteps) {
+                if (step.isComplete()) {
+                    const div = document.createElement('div');
+                    div.className = 'tutorial-step completed';
+                    div.innerHTML = `<div class="tutorial-step-title">✓ ${step.title}</div>`;
+                    container.appendChild(div);
+                }
+            }
+
+            // Show the active step (with full details)
+            if (activeStep) {
+                const div = document.createElement('div');
+                div.className = 'tutorial-step active';
+
+                let html = `
+                    <div class="tutorial-step-title">${activeStep.title}</div>
+                    <div class="tutorial-step-desc">${activeStep.desc}</div>
+                `;
+
+                if (activeStep.hint) {
+                    html += `<div class="tutorial-step-hint">💡 ${activeStep.hint}</div>`;
+                }
+
+                // Add sub-hints if available
+                if (activeStep.subHints && activeStep.subHints.length > 0) {
+                    // Initialize revealed state for this step if needed
+                    if (!revealedSubHints[activeStep.id]) {
+                        revealedSubHints[activeStep.id] = 0;
+                    }
+
+                    html += `<div class="tutorial-subhints">`;
+
+                    const revealed = revealedSubHints[activeStep.id];
+
+                    // Show revealed hints
+                    for (let i = 0; i < revealed && i < activeStep.subHints.length; i++) {
+                        html += `
+                            <div class="tutorial-subhint visible">
+                                <span class="tutorial-subhint-number">Hint ${i + 1}:</span>
+                                ${activeStep.subHints[i]}
+                            </div>
+                        `;
+                    }
+
+                    // Show "need more help?" toggle if there are more hints
+                    if (revealed < activeStep.subHints.length) {
+                        html += `
+                            <div class="tutorial-subhint-toggle" data-step="${activeStep.id}">
+                                <span class="arrow">▶</span>
+                                <span>Need more help? Click for hint ${revealed + 1} of ${activeStep.subHints.length}</span>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div>`;
+                }
+
+                div.innerHTML = html;
+                container.appendChild(div);
+
+                // Add click handler for sub-hint toggle
+                const toggle = div.querySelector('.tutorial-subhint-toggle');
+                if (toggle) {
+                    toggle.addEventListener('click', () => {
+                        const stepId = toggle.dataset.step;
+                        revealedSubHints[stepId] = (revealedSubHints[stepId] || 0) + 1;
+                        updateTutorial(); // Re-render to show new hint
+                    });
+                }
             }
         }
 
@@ -3160,7 +3485,7 @@
             GameState.highScore = 0;
             GameState.currentScore = 0;
             GameState.unlockedSpeeds = [0.1, 0.5, 1, 2, 4, 8, 10];
-            GameState.unlockedInputs = ['constant1'];
+            GameState.unlockedInputs = ['constant1', 'birdVel'];
             GameState.unlockedFunctions = ['step'];
             GameState.hasAIMode = false;
             GameState.hasShieldOutput = false;
